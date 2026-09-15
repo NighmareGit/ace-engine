@@ -1,0 +1,8 @@
+{
+  "name": "self_support",
+  "description": "Claim cites itself as its own evidence (span == claim text).",
+  "question": "what is the best approach for caching",
+  "expected_pass": false,
+  "expected_failing_check": "sources",
+  "verdict_md": "## Verdict\n\nPosition: supported\nConfidence: 0.8\nThe best approach for caching is a three-tier expert cache for latency reduction.\n\n## Sources\n\n- [src-1] title: Source A\n\n## Claims\n\n- [claim-1] caching approach is best [src-1]\n\n## Contradictions\n\n\n## Citations\n\n[claim:1, src:1, \"caching approach is best\", 0.9]\n"
+}

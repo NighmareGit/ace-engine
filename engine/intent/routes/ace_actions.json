@@ -1,0 +1,129 @@
+{
+  "name": "ace_actions",
+  "version": "1.0",
+  "description": "ACE action route table for the IIL TF-IDF pre-router (spike S2 v3 multi-example design: 7 examples/route). Frozen from Wave-0 spike results.",
+  "threshold": 0.50,
+  "gap": 0.04,
+  "routes": {
+    "run_tests": {
+      "description": "Run the test suite or tests for a specific task.",
+      "examples": [
+        "Run the tests for T01.",
+        "Execute the test suite and report failures.",
+        "Please run all tests now.",
+        "Run pytest on the current project.",
+        "Validate T03 by running its tests.",
+        "Check that the tests pass before committing.",
+        "Run the unit tests and show me the output."
+      ]
+    },
+    "commit": {
+      "description": "Commit staged changes to the repository.",
+      "examples": [
+        "Commit the staged changes with message 'feat: add retry'.",
+        "Save and commit what's staged.",
+        "Make a git commit now.",
+        "Commit all staged files.",
+        "Create a commit with the given message.",
+        "git commit the current changes.",
+        "Snapshot the staged work in a commit."
+      ]
+    },
+    "grep": {
+      "description": "Search the codebase for a pattern or string.",
+      "examples": [
+        "Search for 'TODO' across the codebase.",
+        "grep for 'import os' in all python files.",
+        "Find every occurrence of 'MAX_RETRIES'.",
+        "Search the repo for the pattern 'def test_'.",
+        "Look for 'FIXME' in the source.",
+        "Find all uses of the function 'get_transport'.",
+        "Search the project for 'engine.db'."
+      ]
+    },
+    "read_file": {
+      "description": "Read and return the contents of a file.",
+      "examples": [
+        "Read the contents of engine/pipeline.py.",
+        "Show me the file README.md.",
+        "Open and display the source of transport.py.",
+        "Read the validator source code.",
+        "Show the contents of the config file.",
+        "Display the file at path engine/state.py.",
+        "Read the judge module."
+      ]
+    },
+    "list_tasks": {
+      "description": "List all tasks and their current states.",
+      "examples": [
+        "List all tasks in the current run.",
+        "Show me the task board.",
+        "What tasks are pending?",
+        "Display task states.",
+        "Show the status of every task.",
+        "Which tasks are done and which are failed?",
+        "Give me the task list."
+      ]
+    },
+    "escalate_model": {
+      "description": "Escalate the task to a more capable model (e.g. 35B).",
+      "examples": [
+        "This needs more brain — escalate to 35B.",
+        "Bump this up to the 35B model.",
+        "Route this task to the larger model.",
+        "Escalate to the 35B re-plan brain.",
+        "Use the bigger model for this one.",
+        "This is too hard for 9B, escalate.",
+        "Send this to the 35B orchestrator."
+      ]
+    },
+    "fail_with_reason": {
+      "description": "Mark a task as failed with a human-readable reason.",
+      "examples": [
+        "Mark T02 as failed: dependency not available.",
+        "Fail this task with a reason.",
+        "This task cannot proceed — fail it.",
+        "Abort T05 and record why.",
+        "Set the task state to FAILED with explanation.",
+        "Give up on this task and log the cause.",
+        "Fail the task: the sandbox has no network."
+      ]
+    },
+    "read_telemetry": {
+      "description": "Read engine telemetry or a previous run's results.",
+      "examples": [
+        "Show me the telemetry for the last run.",
+        "Read the engine.db results for run-123.",
+        "What does the telemetry say?",
+        "Display the latest run's scores.",
+        "Pull up the gap report.",
+        "Show me the tool-gap findings.",
+        "Read the run summary from the database."
+      ]
+    },
+    "validate": {
+      "description": "Validate the current task's code (AST/imports/exec checks).",
+      "examples": [
+        "Validate the current task.",
+        "Run the validator on T03.",
+        "Check the code passes AST and import validation.",
+        "Please validate the current task.",
+        "Run validation and report the result.",
+        "Lint and validate the generated code.",
+        "Verify the task code compiles and imports resolve."
+      ]
+    },
+    "run_ralph": {
+      "description": "Run the Ralph meta-cognitive loop for iterative self-improving development.",
+      "examples": [
+        "Run the Ralph loop to improve the codebase.",
+        "Start a Ralph meta-cognitive development cycle.",
+        "Use Ralph to iteratively develop this feature.",
+        "Kick off a Ralph self-improvement run.",
+        "Run Ralph with the objective of refactoring the engine.",
+        "Begin a Ralph divergent-ideation development loop.",
+        "Improve the project using the Ralph meta-cognitive loop."
+      ]
+    }
+  }
+}

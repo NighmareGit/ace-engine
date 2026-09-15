@@ -1,0 +1,284 @@
+{
+  "campaign_id": "engine-control-layer",
+  "prd_title": "Engine Control Layer",
+  "prd_path": "coder-harness/prd-engine-control-layer.md",
+  "spec_path": "docs/specs/engine-control-layer.md",
+  "iterations": 3,
+  "tasks": [
+    {
+      "id": "T01",
+      "title": "Engine Service Core + Auth + Health",
+      "description": "Create engine_service.py with FastAPI app skeleton, CORS middleware, token authentication (Authorization: Token <secret> — NOT Bearer; via ENGINE_TOKEN env var, no hardcoded default), Pydantic request/response models for all 8 endpoints, consistent error response format, structured request logging, and GET /health endpoint. Include SIGTERM handler that sets a shutdown flag and allows in-flight requests to drain. CLI args: --port (default 3082), --token (default from ENGINE_TOKEN env). Port-conflict detection on startup.",
+      "files_to_create": ["engine_service.py"],
+      "files_to_modify": [],
+      "dependencies": [],
+      "acceptance_criteria": [
+        "FastAPI app starts on 0.0.0.0:3082 with CORS enabled",
+        "Token auth (Authorization: Token <secret> — NOT Bearer) rejects requests without valid Authorization header",
+        "GET /health returns {status, uptime, model, gpu_temp} within 5s",
+        "Pydantic models defined for all endpoint request/response types",
+        "Consistent error response: {error: str, detail: str, status_code: int}",
+        "SIGTERM triggers graceful shutdown (finish in-flight, then exit)",
+        "Structured JSON logging for every request (method, path, status, duration)",
+        "Port conflict returns clear error message on startup"
+      ],
+      "complexity": "medium",
+      "estimated_tokens": 4500,
+      "category": "api",
+      "state_machine": {
+        "initial_state": "STOPPED",
+        "transitions": [
+          {"from": "STOPPED", "to": "STARTING", "trigger": "start"},
+          {"from": "STARTING", "to": "READY", "trigger": "health_ok"},
+          {"from": "STARTING", "to": "FAILED", "trigger": "startup_error"}
+        ]
+      }
+    },
+    {
+      "id": "T02",
+      "title": "Inference Endpoint",
+      "description": "Implement POST /inference endpoint that proxies chat completion requests to BeeLlama. Accept {port: int, messages: list, max_tokens: int, temperature: float, top_p: float, top_k: int}. Forward to BeeLlama at the correct port (8080 for 3090, 8082 for 3070). 300s timeout to handle long thinking. Return {content, reasoning, timings, usage}. Handle BeeLlama unavailability with 503 + retry hint. Update service state to PROCESSING during inference, back to READY on completion.",
+      "files_to_create": [],
+      "files_to_modify": ["engine_service.py"],
+      "dependencies": ["T01"],
+      "acceptance_criteria": [
+        "POST /inference accepts valid BeeLlama request payload",
+        "Proxies to correct BeeLlama port (8080 or 8082) based on port param",
+        "300s timeout allows long-running inference (30-60s thinking)",
+        "Response includes content, reasoning_content, timings, usage",
+        "503 returned when BeeLlama is unreachable",
+        "Service state transitions: READY → PROCESSING → READY",
+        "Handles malformed messages list with 422 validation error"
+      ],
+      "complexity": "medium",
+      "estimated_tokens": 4000,
+      "category": "api",
+      "state_machine": {
+        "transitions": [
+          {"from": "READY", "to": "PROCESSING", "trigger": "inference_request"},
+          {"from": "PROCESSING", "to": "READY", "trigger": "inference_complete"},
+          {"from": "PROCESSING", "to": "ERROR", "trigger": "inference_error"},
+          {"from": "ERROR", "to": "PROCESSING", "trigger": "retry"},
+          {"from": "ERROR", "to": "FAILED", "trigger": "max_retries_exceeded"}
+        ]
+      }
+    },
+    {
+      "id": "T03",
+      "title": "File Operations Endpoint",
+      "description": "Implement POST /write-files endpoint. Accept {project_path: str, files: [{path: str, content: str}]}. Write each file atomically (write to temp, rename). Collect errors per file. Return {written: list, errors: list, bytes_total: int}. Validate project_path exists and is under allowed directories. Reject path traversal (../) in file paths.",
+      "files_to_create": [],
+      "files_to_modify": ["engine_service.py"],
+      "dependencies": ["T01"],
+      "acceptance_criteria": [
+        "POST /write-files writes all files to specified project_path",
+        "Atomic writes: file content written via temp+rename pattern",
+        "Path traversal (../) rejected with 400 error",
+        "Non-existent project_path returns 404 with clear error",
+        "Partial failures collected: written list has successes, errors list has failures",
+        "bytes_total accurately reflects total bytes written",
+        "Empty files list returns {written: [], errors: [], bytes_total: 0}"
+      ],
+      "complexity": "low",
+      "estimated_tokens": 3000,
+      "category": "api"
+    },
+    {
+      "id": "T04",
+      "title": "Test Runner + Git Commit Endpoints",
+      "description": "Implement POST /run-tests: accept {project_path: str, pattern: str}, run pytest subprocess with timeout 120s, parse JUnit XML or stdout, return {status: str, passed: int, failed: int, results: list}. Implement POST /git-commit: accept {project_path: str, message: str, files: list}, run git add + git commit, return {sha: str, message: str}. Both use subprocess with proper timeout and error capture.",
+      "files_to_create": [],
+      "files_to_modify": ["engine_service.py"],
+      "dependencies": ["T01"],
+      "acceptance_criteria": [
+        "POST /run-tests executes pytest in project_path with pattern filter",
+        "Test results parsed: passed/failed counts + per-test status",
+        "120s timeout kills long-running test suites gracefully",
+        "POST /git-commit stages specified files and commits with message",
+        "Commit SHA returned in response",
+        "Non-git directory returns 400 with clear error",
+        "Empty files list in git-commit returns 400 (nothing to commit)"
+      ],
+      "complexity": "medium",
+      "estimated_tokens": 4000,
+      "category": "api"
+    },
+    {
+      "id": "T05",
+      "title": "Exec + GPU Status + SSE Streaming Endpoints",
+      "description": "Implement POST /exec: accept {command: str, cwd: str, timeout: int}, execute shell command, return {stdout, stderr, rc}. Restrict dangerous commands (rm -rf /, etc.) or require --allow-exec flag. Implement GET /gpu-status: query nvidia-smi, return {gpus: [{index, name, temp, vram_used, vram_total, util}]}. Implement GET /stream: SSE endpoint with query params ?channels=engine,gpu, periodic heartbeat (30s keepalive), event format: event: <channel>\\ndata: <json>\\n\\n",
+      "files_to_create": [],
+      "files_to_modify": ["engine_service.py"],
+      "dependencies": ["T01"],
+      "acceptance_criteria": [
+        "POST /exec runs shell command with configurable timeout",
+        "Dangerous commands blocked or warnlogged (rm -rf, mkfs, etc.)",
+        "GET /gpu-status returns per-GPU metrics from nvidia-smi",
+        "GET /stream establishes SSE connection with correct Content-Type",
+        "SSE heartbeat sent every 30s to prevent proxy/client timeout",
+        "Channel filtering: only events for requested channels are sent",
+        "exec timeout returns partial stdout/stderr + timeout error"
+      ],
+      "complexity": "medium",
+      "estimated_tokens": 4000,
+      "category": "api"
+    },
+    {
+      "id": "T06",
+      "title": "Engine HTTP Client",
+      "description": "Create engine_client.py with EngineClient class that mirrors the LocalTransport/RemoteTransport API. Uses urllib.request (stdlib) for zero dependencies. Features: connection reuse, configurable base_url and token, request timeout per-endpoint, retry with exponential backoff (3 attempts, 1s/2s/4s), structured error handling (EngineClientError). Methods: inference(), write_files(), run_tests(), git_commit(), exec_command(), health(), gpu_status(), stream(). All methods return parsed JSON dicts.",
+      "files_to_create": ["engine_client.py"],
+      "files_to_modify": [],
+      "dependencies": ["T01", "T02", "T03", "T04", "T05"],
+      "acceptance_criteria": [
+        "EngineClient class with all 8 endpoint methods",
+        "Zero external dependencies (stdlib urllib only)",
+        "Token auth via Authorization: Token <secret> header (NOT Bearer)",
+        "Retry with exponential backoff: 3 attempts, delays 1s/2s/4s",
+        "Connection reuse via urllib connection pooling",
+        "Per-endpoint timeout configuration",
+        "EngineClientError exception class with status_code and response body",
+        "Methods return parsed JSON dicts matching API response schemas",
+        "stream() returns an iterator of SSE events"
+      ],
+      "complexity": "medium",
+      "estimated_tokens": 5000,
+      "category": "transport"
+    },
+    {
+      "id": "T07",
+      "title": "HTTPTransport + Transport Selection Logic",
+      "description": "Add HTTPTransport class to transport.py that wraps EngineClient and mirrors LocalTransport/RemoteTransport API (curl_beellama, run_command, check_beellama_health, get_model_list, nvidia_smi, run_git, docker_exec, docker_run). Update get_transport() with new priority: (1) HTTP — probe GET /health on port 3082, (2) Local — BeeLlama reachable at localhost, (3) SSH — RemoteTransport fallback. Include transport fallback: if HTTP request fails with ConnectionError, log warning and fall back to SSH for that request. Cache transport selection but allow forced override via TRANSPORT_MODE env var.",
+      "files_to_create": [],
+      "files_to_modify": ["transport.py"],
+      "dependencies": ["T06"],
+      "acceptance_criteria": [
+        "HTTPTransport class implements same API surface as LocalTransport/RemoteTransport",
+        "get_transport() tries HTTP first (probe localhost:3082/health)",
+        "Fallback chain: HTTP → Local → SSH",
+        "TRANSPORT_MODE env var can force: 'http', 'local', 'ssh', or 'auto'",
+        "HTTPTransport falls back to SSH on ConnectionError",
+        "Transport selection logged at startup",
+        "Existing code (code_generator, test_runner, git_workflow) works without changes",
+        "HTTPTransport handles 503 from engine service gracefully"
+      ],
+      "complexity": "high",
+      "estimated_tokens": 5000,
+      "category": "transport"
+    },
+    {
+      "id": "T08",
+      "title": "CLI Commands + Service Lifecycle State Machine",
+      "description": "Add engine subcommand group to harness.py: 'engine start [--port] [--token]', 'engine stop', 'engine status'. 'engine start' launches engine_service.py as background process, writes PID file. 'engine stop' sends SIGTERM via PID file. 'engine status' queries GET /health and displays service state. Implement full service lifecycle state machine: STOPPED → STARTING → READY → PROCESSING → DEGRADED → FAILED, persisted in a .state file. State transitions: startup health check → READY, inference request → PROCESSING, inference complete → READY, repeated errors → DEGRADED, max failures → FAILED.",
+      "files_to_create": [],
+      "files_to_modify": ["harness.py", "engine_service.py"],
+      "dependencies": ["T07"],
+      "acceptance_criteria": [
+        "harness.py engine start launches service as background process",
+        "PID file written for stop/status commands",
+        "harness.py engine stop sends SIGTERM gracefully",
+        "harness.py engine status shows service health + uptime + state",
+        "State machine: STOPPED → STARTING → READY → PROCESSING → DEGRADED → FAILED",
+        "State persisted in .state file for crash recovery",
+        "Consecutive error count tracked; 5+ errors → DEGRADED, 10+ → FAILED",
+        "Engine start fails gracefully if port is already in use"
+      ],
+      "complexity": "medium",
+      "estimated_tokens": 4000,
+      "category": "infra"
+    },
+    {
+      "id": "T09",
+      "title": "Systemd Unit + SSH Fallback Fixes",
+      "description": "Create engine_service.unit systemd unit file: Type=simple, Restart=always, RestartSec=5, Environment=ENGINE_TOKEN, EnvironmentFile=-/etc/engine-token. Also fix SSH fallback in transport.py: (1) Remove hardcoded password '12345', use SSH key auth only, (2) Add ControlMaster=auto -o ControlPath=/tmp/ssh-engine-%r@%h:%p for connection pooling, (3) Increase SSH timeout to 300s for inference calls, (4) Add ServerAliveInterval=30 ServerAliveCountMax=10 for keepalive.",
+      "files_to_create": ["engine_service.unit"],
+      "files_to_modify": ["transport.py"],
+      "dependencies": ["T08"],
+      "acceptance_criteria": [
+        "systemd unit file starts engine_service.py with correct env",
+        "Restart=always with RestartSec=5 for auto-recovery",
+        "EnvironmentFile supports token from /etc/engine-token",
+        "SSH uses key auth only (no sshpass dependency)",
+        "SSH ControlMaster=auto for connection pooling",
+        "SSH timeout increased to 300s for inference",
+        "SSH keepalive: ServerAliveInterval=30, ServerAliveCountMax=10",
+        "No hardcoded passwords in any file"
+      ],
+      "complexity": "low",
+      "estimated_tokens": 3000,
+      "category": "infra"
+    },
+    {
+      "id": "T10",
+      "title": "Integration + Resilience Tests",
+      "description": "Create test_engine_service.py with: (1) Unit tests for all 8 endpoints using httpx TestClient, (2) Integration test: POST inference → verify response → POST write-files → verify file on disk → POST run-tests → verify results → POST git-commit → verify SHA, (3) Resilience test: kill service mid-inference, verify client retries and falls back to SSH, (4) Transport selection test: mock each environment and verify correct transport returned, (5) Auth test: verify token validation, (6) Concurrent request test: 5 parallel inference requests, no drops.",
+      "files_to_create": ["test_engine_service.py"],
+      "files_to_modify": [],
+      "dependencies": ["T01", "T02", "T03", "T04", "T05", "T06", "T07", "T08", "T09"],
+      "acceptance_criteria": [
+        "All 8 endpoints have request/response validation tests",
+        "Integration test completes full write→test→commit pipeline",
+        "Resilience test: service kill → client retry → SSH fallback works",
+        "Transport selection returns HTTP when service is up",
+        "Transport selection returns SSH when service is down",
+        "Auth: missing token → 401, wrong token → 403, valid token → 200",
+        "5 concurrent requests complete without drops or errors",
+        "All tests runnable with: python3 -m pytest test_engine_service.py"
+      ],
+      "complexity": "high",
+      "estimated_tokens": 5000,
+      "category": "test"
+    }
+  ],
+  "metadata": {
+    "total_tasks": 10,
+    "iterations": 3,
+    "iteration_1_summary": "Initial decomposition into 9 atomic tasks covering API endpoints, client, transport, and deployment. Each task scoped to <50 LOC where possible.",
+    "iteration_2_red_team_findings": [
+      "MISSING: Pydantic request/response validation models — added to T01",
+      "MISSING: Structured error response format (consistent {error, detail, status_code}) — added to T01",
+      "MISSING: Request logging (method, path, status, duration) — added to T01",
+      "SECURITY: POST /exec allows arbitrary command execution — added dangerous command blocking in T05",
+      "MISSING: SSE heartbeat/keepalive (30s interval) to prevent proxy timeouts — added to T05",
+      "MISSING: Connection pooling in HTTP client — added to T06",
+      "MISSING: Retry with exponential backoff in HTTP client — added to T06 (3 attempts, 1s/2s/4s)",
+      "MISSING: Transport fallback (HTTP fails → SSH for that request) — added to T07",
+      "MISSING: SSH Tier 1 fixes (sshpass removal, key auth, ControlMaster, timeouts) — added to T09",
+      "MISSING: Port conflict detection on startup — added to T01",
+      "DEPENDENCY ERROR: T09 (CLI) needed T08 (transport) for status display — fixed ordering",
+      "MISSING: Integration and resilience tests — added T10",
+      "SECURITY: Hardcoded default token 'engine-secret-2024' — changed to require ENGINE_TOKEN env var",
+      "MISSING: State machine state persistence for crash recovery — added .state file to T08"
+    ],
+    "iteration_3_finalizations": [
+      "Added service lifecycle state machine: STOPPED → STARTING → READY → PROCESSING → DEGRADED → FAILED",
+      "Added transport selection state machine: HTTP? → Local? → SSH fallback",
+      "Added error handling: consistent Pydantic validation errors, HTTP error responses, exception chaining",
+      "Added retry policy: 3 attempts with exponential backoff (1s, 2s, 4s) on ConnectionError/503",
+      "Added graceful shutdown: SIGTERM → drain in-flight requests → exit (max 30s drain timeout)",
+      "Added request logging: structured JSON with method, path, status_code, duration_ms",
+      "Added SSE heartbeat: 30s keepalive comment events to prevent proxy timeouts",
+      "Added dangerous command blocking for /exec endpoint",
+      "Added state persistence via .state file for crash recovery"
+    ],
+    "dependency_graph": {
+      "T01": [],
+      "T02": ["T01"],
+      "T03": ["T01"],
+      "T04": ["T01"],
+      "T05": ["T01"],
+      "T06": ["T01", "T02", "T03", "T04", "T05"],
+      "T07": ["T06"],
+      "T08": ["T07"],
+      "T09": ["T08"],
+      "T10": ["T01", "T02", "T03", "T04", "T05", "T06", "T07", "T08", "T09"]
+    },
+    "parallelization_opportunities": [
+      "T02, T03, T04, T05 can be implemented in parallel (all depend only on T01)",
+      "T09 and T10 are independent of each other but both depend on T08"
+    ],
+    "estimated_total_tokens": 41500,
+    "files_created": ["engine_service.py", "engine_client.py", "engine_service.unit", "test_engine_service.py"],
+    "files_modified": ["transport.py", "harness.py"]
+  }
+}

@@ -1,0 +1,20 @@
+{
+ "id": "G1-T06",
+ "files": [
+  "engine/edit_ops/metrics.py",
+  "engine/state.py"
+ ],
+ "module": "engine/edit_ops/metrics.py",
+ "acceptance_criteria": [
+  "first_apply_rate(run_id) exposed in engine/edit_ops/metrics.py",
+  "edit_op_results records applied=0/1 + match_count per attempt",
+  "Session log captures match count on failure",
+  "Metric exposed for measurement (>=90% first-apply threshold)"
+ ],
+ "dependencies": [
+  "G1-T02"
+ ],
+ "category": "api",
+ "title": "edit-op metrics instrumentation \u2014 exact-apply rate counter + session log",
+ "description": "engine/edit_ops/metrics.py exposes first_apply_rate(run_id). edit_op_results table records applied=0/1 + match_count per attempt. Session log captures match count on failure. Enables the pre-registered >=90% first-apply success threshold to be measured. No engine/metrics.py (does not exist)."
+}

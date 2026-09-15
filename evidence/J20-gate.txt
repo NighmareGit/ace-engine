@@ -1,0 +1,37 @@
+Ticket: J20
+Branch: ace/judge-wiring
+Commit: bab10fb9bb5317f995fb1ae0b49570583e8a3127
+Files changed: 7
+
+Push result:
+  fatal: 'origin' does not appear to be a git repository
+  fatal: Could not read from remote repository.
+  EXIT_CODE=128
+
+Note: No 'origin' remote configured. Only 'host' remote exists:
+  host	http://<user>:<GITEA_TOKEN>@<LAN_IP>:3000/<user>/coder-harness.git (push)
+
+Commit message:
+  feat(engine): wire judge_run hook + housekeeping (JW campaign)
+
+  - EngineConfig.judge flag, post-pipeline judge hook, judge_verdicts table
+  - functional e2e assertions + pytest -m e2e gating
+  - contract v1 deprecation, legacy sunset tooling, unit conftest skip-guards
+
+Files in commit:
+  .gitignore                              (new)
+  AGENTS.md                               (modified)
+  engine/cli.py                           (modified)
+  engine/engine.py                        (modified)
+  legacy/SUNSET.md                        (modified)
+  tests/engine/test_judge_hook.py         (new)
+  tools/legacy_sunset.py                  (modified)
+
+.gitignore entries added for junk exclusion:
+  *.db
+  *.db.bak
+  benchmark-results.db
+  __pycache__/
+  engine_run_*_tasks.json
+
+Push was not possible due to missing 'origin' remote. Local commit delivered on ace/judge-wiring.

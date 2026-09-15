@@ -1,0 +1,47 @@
+stateDiagram-v2
+    [*] --> IDLE
+
+    IDLE --> PARSING : engine.run() called
+    IDLE --> CANCELLED : SIGINT
+
+    PARSING --> QUEUED : PRD parsed successfully
+    PARSING --> FAILED : PRD unparseable
+
+    QUEUED --> CONTEXT : next task available
+    QUEUED --> DONE : all tasks completed
+
+    CONTEXT --> GENERATE : context built
+
+    GENERATE --> VALIDATE : code produced
+    GENERATE --> FAILED : inference error (retry exhausted)
+
+    VALIDATE --> TEST : validation passed
+    VALIDATE --> GENERATE : validation failed, retry < 3
+    VALIDATE --> FAILED : validation failed, retry >= 3
+
+    TEST --> COMMIT : tests passed
+    TEST --> GENERATE : tests failed, fix < 2
+    TEST --> FAILED : tests failed, fix >= 2
+
+    COMMIT --> NEXT : commit successful
+    COMMIT --> QUEUED : commit failed, continue next task
+
+    NEXT --> QUEUED : more tasks remaining
+    NEXT --> DONE : no more tasks
+
+    DONE --> [*]
+    FAILED --> [*]
+    CANCELLED --> [*]
+
+    note right of GENERATE
+        retry with escalation:
+        attempt 1: fresh prompt
+        attempt 2: + validation errors
+        attempt 3: + stack traces + related files
+    end note
+
+    note right of TEST
+        fix with context:
+        fix 1: + test failure output
+        fix 2: + stack traces + code diff
+    end note

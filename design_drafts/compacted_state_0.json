@@ -1,0 +1,235 @@
+{
+  "iteration": 0,
+  "project": "coder-harness",
+  "phase": "engine-unification",
+
+  "acceptance_drivers": {
+    "AD1": "One engine package (engine/), not scattered modules",
+    "AD2": "12-state state machine with validated transitions",
+    "AD3": "One CLI entry point (cli.py), not 6",
+    "AD4": "Streaming is opt-in, not hard dependency",
+    "AD5": "Legacy modules moved, not deleted",
+    "AD6": "E2E test proves the engine works (PRD → commit)",
+    "AD7": "Transport is a dependency, not owned by engine",
+    "AD8": "Validator is multi-stage (AST → syntax → imports → execution)",
+    "AD9": "Benchmark platform moves to bench/",
+    "AD10": "Sandbox is opt-in (--sandbox)"
+  },
+
+  "architecture": {
+    "selected_approach": "Minimal State Machine with Facade — keep 12 states (AD2), simplify execution to 5 phases (PARSE→GENERATE→VALIDATE→TEST→COMMIT), use plain functions everywhere except pipeline.py and engine.py",
+    "patterns_kept": ["State Machine (pipeline.py)", "Facade (engine.py)", "Dataclass (Python feature)"],
+    "patterns_rejected": ["Strategy", "Chain of Responsibility", "Builder", "Repository", "Observer", "Adapter", "Registry", "Circuit Breaker", "Memento", "Template Method", "Null Object", "Decorator"],
+    "rejection_rationale": "Pragmatic review found 8 GoF patterns across 10 modules = pattern-over-engineering for a single-developer local tool. Revised to 2 patterns + dataclasses. Plain functions for context, generation, validation, testing, committing, state persistence, and events."
+  },
+
+  "bounded_contexts": [
+    {
+      "name": "Engine Facade",
+      "file": "engine/engine.py",
+      "classes": ["Engine", "RunResult", "TaskResult", "RunStatus"],
+      "pattern": "Facade",
+      "responsibility": "Public API: run(), step(), status(), cancel(). Hides all internal complexity."
+    },
+    {
+      "name": "Pipeline State Machine",
+      "file": "engine/pipeline.py",
+      "classes": ["State", "Pipeline", "TransitionResult"],
+      "pattern": "State Machine",
+      "responsibility": "12-state machine with validated transitions, checkpoint, resume, cancel."
+    },
+    {
+      "name": "Context Builder",
+      "file": "engine/context.py",
+      "functions": ["build_context()"],
+      "classes": ["Context"],
+      "pattern": "none (plain function)",
+      "responsibility": "Read project files, detect framework, assemble context for code generation."
+    },
+    {
+      "name": "Code Generator",
+      "file": "engine/generator.py",
+      "functions": ["generate_code()"],
+      "classes": ["GeneratedCode", "ErrorContext"],
+      "pattern": "none (plain function)",
+      "responsibility": "Build prompt via prompt_compiler, call BeeLlama via transport, extract code blocks."
+    },
+    {
+      "name": "Validator",
+      "file": "engine/validator.py",
+      "functions": ["validate()", "check_ast()", "check_syntax()", "check_imports()", "check_execution()"],
+      "classes": ["ValidationResult"],
+      "pattern": "none (plain functions)",
+      "responsibility": "4-stage validation in sequence: AST → syntax → imports → execution."
+    },
+    {
+      "name": "Test Runner",
+      "file": "engine/tester.py",
+      "functions": ["run_tests()"],
+      "classes": ["TestResult"],
+      "pattern": "none (plain function)",
+      "responsibility": "Run pytest via transport, parse results."
+    },
+    {
+      "name": "Committer",
+      "file": "engine/committer.py",
+      "functions": ["commit_code()"],
+      "classes": ["CommitResult"],
+      "pattern": "none (plain function)",
+      "responsibility": "Branch, write files, commit, push via transport."
+    },
+    {
+      "name": "State Persistence",
+      "file": "engine/state.py",
+      "functions": ["init_db()", "checkpoint_run()", "save_task_result()", "load_run()", "list_runs()"],
+      "pattern": "none (plain sqlite3 functions)",
+      "responsibility": "SQLite persistence for engine_runs and engine_task_results tables."
+    },
+    {
+      "name": "Event Bridge",
+      "file": "engine/events.py",
+      "functions": ["emit_event()"],
+      "pattern": "none (optional callback)",
+      "responsibility": "If on_event callback is set, call it. Otherwise no-op. 5 lines."
+    },
+    {
+      "name": "Package Init",
+      "file": "engine/__init__.py",
+      "classes": ["EngineConfig"],
+      "pattern": "Dataclass",
+      "responsibility": "Config, constants, version."
+    }
+  ],
+
+  "state_machine": {
+    "states": ["IDLE", "PARSING", "QUEUED", "CONTEXT", "GENERATE", "VALIDATE", "TEST", "COMMIT", "NEXT", "DONE", "FAILED", "CANCELLED"],
+    "transitions": {
+      "IDLE": ["PARSING", "CANCELLED"],
+      "PARSING": ["QUEUED", "FAILED", "CANCELLED"],
+      "QUEUED": ["CONTEXT", "DONE", "CANCELLED"],
+      "CONTEXT": ["GENERATE", "CANCELLED"],
+      "GENERATE": ["VALIDATE", "FAILED", "CANCELLED"],
+      "VALIDATE": ["TEST", "GENERATE", "FAILED", "CANCELLED"],
+      "TEST": ["COMMIT", "GENERATE", "FAILED", "CANCELLED"],
+      "COMMIT": ["NEXT", "QUEUED", "CANCELLED"],
+      "NEXT": ["QUEUED", "DONE", "CANCELLED"],
+      "DONE": [],
+      "FAILED": [],
+      "CANCELLED": []
+    },
+    "retry": {
+      "GENERATE": "max 3, each retry adds error context",
+      "TEST": "max 2 fixes, each adds test failure output",
+      "COMMIT": "max 2, fallback to direct push"
+    }
+  },
+
+  "integration_seams": [
+    {"name": "transport.get_transport()", "owner": "transport.py", "consumers": ["engine/context.py", "engine/generator.py", "engine/tester.py", "engine/committer.py"]},
+    {"name": "prompt_compiler.PromptCompiler", "owner": "prompt_compiler.py", "consumers": ["engine/generator.py"]},
+    {"name": "on_event callback", "owner": "engine/events.py", "consumers": ["engine/engine.py", "engine/pipeline.py"]},
+    {"name": "sqlite3", "owner": "engine/state.py", "consumers": ["engine/pipeline.py", "engine/engine.py"]}
+  ],
+
+  "nfrs": {
+    "NFR1": {"slo": "E2E <5 min for trivial PRD", "gate": "Integration test asserts total_time_s < 300"},
+    "NFR2": {"slo": "CLI <600 lines", "gate": "wc -l cli.py in CI"},
+    "NFR3": {"slo": "Checkpoint fast (no measured SLO)", "gate": "Design guideline: don't do heavy I/O in checkpoints"},
+    "NFR4": {"slo": "All 12 states reachable", "gate": "Unit test enumerates transitions"},
+    "NFR5": {"slo": "Retry adds context", "gate": "Unit test verifies ErrorContext escalation"},
+    "NFR6": {"slo": "Streaming opt-in", "gate": "Unit test: engine.run() with on_event=None"},
+    "NFR7": {"slo": "Transport single detection", "gate": "Unit test: transport called once in __init__"},
+    "NFR8": {"slo": "4-stage validator", "gate": "Unit test: each stage catches its error type"},
+    "NFR9": {"slo": "Legacy importable with deprecation", "gate": "Import test + warnings.warn"},
+    "NFR10": {"slo": "15-20 unit + 2-3 integration + 1 E2E", "gate": "pytest count"},
+    "NFR11": {"slo": "Dry-run works", "gate": "CLI test with --dry-run"},
+    "NFR12": {"slo": "SIGINT graceful", "gate": "Integration test simulates SIGINT"}
+  },
+
+  "qol_features": [
+    "Dry-run state preview (show full state path before executing)",
+    "Per-task timing breakdown (each transition records duration)",
+    "Configurable retry budgets (override max retries via CLI)",
+    "Progress percentage (completed/total × 100)",
+    "Colorized terminal output (state transitions colored by type)",
+    "Checkpoint Rollback with Selective Resume (--from-state)",
+    "LLM Output Diff Preview Gate (unified diff before commit)",
+    "Token Budget Accounting (per-task token consumption tracking)"
+  ],
+
+  "review_verdicts": {
+    "pragmatic_reviewer_v1": "FAIL (8 patterns over-engineered)",
+    "scoped_repair": "Reduced to 2 patterns + dataclasses, plain functions everywhere else",
+    "pragmatic_reviewer_v2": "pending (re-review dispatched)",
+    "chaos_threat": "pending (analysis in progress)",
+    "blueprint_innovator": "PASS (5 QoL features + interface contracts extracted)"
+  },
+
+  "decision_log": [
+    {
+      "decision": "Hybrid Minimal State Machine with Facade",
+      "rationale": "Preserves 12-state observability (AD2) while simplifying execution loop. Facade pattern for engine.py. Plain functions for all other modules.",
+      "rejected_alternatives": ["Event-Sourced Pipeline (overengineered)", "Plugin Architecture (premature)", "Saga Pattern (complex compensation)", "Minimal 6-state (too aggressive)"],
+      "iteration": 0
+    },
+    {
+      "decision": "Reduce patterns from 8 to 2",
+      "rationale": "Pragmatic review found pattern-over-engineering. 8 GoF patterns in 10 modules is enterprise scale for a single-developer local tool. Keep State Machine + Facade, use plain functions everywhere else.",
+      "rejected_alternatives": ["Strategy (one backend)", "Chain of Responsibility (fixed pipeline)", "Builder (one-pass construction)", "Repository (2 tables)", "Observer (one consumer)", "Adapter (transport already abstracts)"],
+      "iteration": 0
+    },
+    {
+      "decision": "VALIDATION PASS: simulation + red-team found 20+ concrete breaks that document-only audits missed",
+      "rationale": "Critical: unsandboxed exec of LLM code, files never written before pytest (TEST tested nothing), path traversal via task.module, HTTPTransport sends no auth token (real codebase bug), Rule-6 violation (merged SQLite DBs). ALL patched in artifacts — see VALIDATION_REPORT.md.",
+      "rejected_alternatives": ["Trusting document-only audits", "Skipping simulation because 3 prior audits passed"],
+      "meta_lesson": "Document-only audits systematically over-pass. Every future review gate MUST include (a) code-anchored API checks against the real codebase and (b) a traced execution simulation against goals.",
+      "iteration": 0
+    },
+    {
+      "decision": "VALIDATION PASS 2: code-vs-contract diff found 2 implementation killers + 1 bug + 8 gaps (C1-C11); all fixed",
+      "rationale": "C1: BeeLlama response is FLAT (total_tokens/thinking_tokens) not nested usage — 0-token corruption. C2: NO write_file exists on any transport — write_project_file() base64 helper is the single write path. C5: regex parser was a DOWNGRADE of existing PRDParser — now bridged (PRDParser first, regex fallback). C3 docker_exec arg bug, C4 prd_result shape, C6 Task.files list, C8 engine.db schema_version, C9 streaming bridge. All patched — see VALIDATION_REPORT.md.",
+      "rejected_alternatives": ["Keeping regex-only parser (feature loss)", "Adding transport.write_file in Phase 1 (optional, helper suffices)"],
+      "iteration": 0
+    },
+    {
+      "decision": "MISSION-INTEGRITY PASS: design now traces to AGENTS.md mission across all 10 clauses; 8 anchored in Phase 1, 2 flagged as Phase 2 gaps",
+      "rationale": "Final integrity gate before campaign-ready. Added: mission anchor (ARCHITECTURE.md §0 quoting AGENTS.md lines 3 and 9), goal-trace table (10 mission clauses → design sections + acceptance gates), Epic 5 Phase 2 stub (EPICS.md lines 137–158), self-scoring contract (contracts/self-scoring-benchmark.yaml, 510 lines), parent-layer anchoring (EPICS.md Mission section). Red-team: ARCHITECTURE.md line citations are ~20 lines off (written against pre-Mission-Anchor draft, content present, numbers imprecise); contract v1 uses old patterns (v2 is authoritative). Consistency sweep: engine.db is sole engine DB everywhere; 12-state machine identical in all docs; one-CLI decision consistent; Epic 5 stub consistently Phase 2; no scope contradictions. Final status: 8/10 clauses fully anchored Phase 1, 2/10 correctly Phase 2 (self-scoring via judge, CCBS benchmark drivability).",
+      "rejected_alternatives": ["Implementing self-scoring in Phase 1 (judge is bench-side only, no engine pipeline step)", "Skipping CCBS integration (mission clause requires it, deferred to Phase 2 with Epic 5)"],
+      "meta_lesson": "Mission trace tables written against moving documents accumulate line-number drift. Always re-verify citations against the current file, not the version the table was authored against.",
+      "iteration": 0,
+      "files_changed": [
+        "design_drafts/ARCHITECTURE.md (§0 Mission Anchor + Goal-Trace Table — pre-existing)",
+        "design_drafts/EPICS.md (Mission section + Epic 5 Phase 2 stub — pre-existing)",
+        "design_drafts/VALIDATION_REPORT.md (post-validation mission-integrity pass section — added this pass)",
+        "design_drafts/compacted_state_0.json (this decision-log entry)",
+        "design_drafts/contracts/self-scoring-benchmark.yaml (Phase 2 stub — pre-existing)"
+      ]
+    },
+    {
+      "decision": "Ticket-ledger state machine + backtest design authored; propagated to all lateral project files",
+      "rationale": "Two new authoritative designs were authored to close Phase 2 coverage gaps: (1) TICKET-STATE-MACHINE.md — the ticket-ledger state machine with bounded fix loops, escalation gates, and atom-level trace integration; (2) BACKTEST-DESIGN.md — atom-level replay making every engine run deterministic and bisectable offline without GPU. Both designs share an atom model: campaign atoms (ticket-machine gates) and engine atoms (pipeline transitions) use the same replay/forensics tooling. Propagated into EPICS.md (Epic 6 stub with 4 user stories + 3 acceptance criteria), ARCHITECTURE.md (engine/trace.py as Phase-2 module + determinism contract), PRE_PRD.md (AC6.1–AC6.3 verification gates), VALIDATION_REPORT.md (design pass section), and orchestration-layer-design.md (ACE section extended).",
+      "rejected_alternatives": ["Implementing backtest in Phase 1 (blocked on unified engine)", "Separate atom models for campaign vs engine atoms (divergence risk)"],
+      "meta_lesson": "When two new designs share a core concept (atom model), propagate them together into the lateral files to keep the cross-references tight and avoid drift.",
+      "iteration": 0,
+      "files_changed": [
+        "design_drafts/EPICS.md (Epic 6 Phase 2 stub — added this pass)",
+        "design_drafts/ARCHITECTURE.md (engine/trace.py module map row + determinism contract — added this pass)",
+        "design_drafts/PRE_PRD.md (AC6.1–AC6.3 — added this pass)",
+        "design_drafts/VALIDATION_REPORT.md (Backtest & ticket-machine design pass section — added this pass)",
+        "design_drafts/compacted_state_0.json (this decision-log entry)",
+        "orchestration-layer-design.md (ACE section extended with backtest reference — added this pass)"
+      ]
+    }
+  ],
+
+  "open_questions": [
+    "Chaos/Threat analysis still pending — may identify state machine edge cases",
+    "Pragmatic reviewer v2 re-review pending — may accept the simplified design",
+    "Should context.py and generator.py be merged? (single caller, tight coupling)",
+    "Should tester.py and validator.py be merged? (both validate code quality)"
+  ],
+
+  "iteration_limit": 2,
+  "current_iteration": 0,
+  "frozen_early": false
+}

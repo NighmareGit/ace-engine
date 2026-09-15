@@ -1,0 +1,18 @@
+# Don't send these to the Docker build context
+__pycache__
+*.pyc
+*.pyo
+.pytest_cache
+*.db
+*.sqlite
+logs/
+reports/
+tickets/
+docs/
+benchmarks/
+*.md
+!README.md
+.git
+.scratch
+*.egg-info
+node_modules

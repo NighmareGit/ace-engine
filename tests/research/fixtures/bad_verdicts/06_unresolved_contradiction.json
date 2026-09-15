@@ -1,0 +1,8 @@
+{
+  "name": "unresolved_contradiction",
+  "description": "Contradiction entry exists but carries no resolution.",
+  "question": "what is the best approach for caching",
+  "expected_pass": false,
+  "expected_failing_check": "sources",
+  "verdict_md": "## Verdict\n\nPosition: supported\nConfidence: 0.8\nThe best approach for caching is a three-tier expert cache for latency.\n\n## Sources\n\n- [src-1] title: Source A\n- [src-2] title: Source B\n\n## Claims\n\n- [claim-1] three-tier caching reduces latency [src-1]\n- [claim-2] expert cache improves throughput [src-2]\n\n## Contradictions\n\n- between [1, 2]\n\n## Citations\n\n[claim:1, src:1, \"three tier caching reduces latency\", 0.9]\n[claim:2, src:2, \"expert cache improves throughput\", 0.8]\n"
+}

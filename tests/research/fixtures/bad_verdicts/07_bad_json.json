@@ -1,0 +1,8 @@
+{
+  "name": "bad_json",
+  "description": "Malformed markers ([claim-], [src-]) that do not parse to valid ids.",
+  "question": "what is the best approach for caching",
+  "expected_pass": false,
+  "expected_failing_check": "citation_format",
+  "verdict_md": "## Verdict\n\nPosition: supported\nConfidence: 0.8\nThe best approach for caching is a three-tier expert cache for latency reduction.\n\n## Sources\n\n- [src-1] title: Source A\n\n## Claims\n\n- [claim-] broken marker [src-1]\n\n## Contradictions\n\n\n## Citations\n\n[claim:1, src:1, \"evidence span\", 0.9]\n"
+}

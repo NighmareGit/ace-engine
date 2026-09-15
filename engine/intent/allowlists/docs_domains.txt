@@ -1,0 +1,10 @@
+# Allowlisted documentation domains for the T4 docs_domains egress tool
+# (engine/intent/docs.py). One domain per line. Comments and blank lines
+# ignored. The fetcher ONLY issues GET requests to these domains — any
+# off-allowlist domain in a URL is rejected (egress-allowlist law, invariant #4).
+#
+# Seed with the two canonical local-project docs. Add new domains only with
+# a spec delta + ledger entry.
+
+docs.python.org
+llama-cpp.readthedocs.io

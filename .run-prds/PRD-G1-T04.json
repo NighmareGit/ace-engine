@@ -1,0 +1,21 @@
+{
+ "id": "G1-T04",
+ "files": [
+  "engine/task_handler.py",
+  "engine/edit_ops/__init__.py"
+ ],
+ "module": "engine/task_handler.py",
+ "acceptance_criteria": [
+  "One task_type=='edit' branch added to _resolve_handler() (lazy import)",
+  "EditTaskHandler facade orchestrates the full edit pipeline",
+  "Edit atoms route through the new edit handler",
+  "Code-atom path unchanged (full suite passes)",
+  "Edit handler applies commit-gate verification on write (Gitea #44)"
+ ],
+ "dependencies": [
+  "G1-T03"
+ ],
+ "category": "api",
+ "title": "edit-op handler integration \u2014 dispatch branch + EditTaskHandler facade",
+ "description": "One task_type=='edit' branch in _resolve_handler() (engine/task_handler.py:64, lazy import). EditTaskHandler facade in engine/edit_ops/__init__.py orchestrates generate -> extract -> validate -> apply_blocks() -> write -> commit-gate read-back. Code-atom path unchanged. engine.py hook at 471-474 already diverts non-CodeTaskHandler (no change needed)."
+}

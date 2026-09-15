@@ -1,0 +1,21 @@
+{
+ "id": "G1-T03",
+ "files": [
+  "engine/edit_ops/validate.py"
+ ],
+ "module": "engine/edit_ops/validate.py",
+ "acceptance_criteria": [
+  "Stage 0-5 validator covers empty, format, existence, exact-match, syntax, path traversal",
+  "Multi-match fails loud with the match count (never silent first-match)",
+  "Empty old_string fails at stage 1",
+  "Path traversal (.., ~, absolute outside root) rejected at stage 5",
+  "Retry ladder uses ('edit', check_name) signature",
+  "New code lives in engine/edit_ops/validate.py (not inline in validator.py)"
+ ],
+ "dependencies": [
+  "G1-T02"
+ ],
+ "category": "api",
+ "title": "edit-op validator stages 0-5 \u2014 exact-match apply, multi-match fail-loud",
+ "description": "EditValidator.validate() with stages 0-5: (0) blocks non-empty; (1) each block has non-empty old_string; (2) target file exists; (3) exact-match apply \u2014 file.count(old)==1, else fail with match count (multi-match fails WITH count, never silent first-match); (4) result parses (ast.parse if .py); (5) path traversal rejected (no .., no abs, no ~). Reuses retry ladder ('edit', check_name). New code in engine/edit_ops/validate.py, NOT inline in validator.py."
+}

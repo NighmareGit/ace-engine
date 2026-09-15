@@ -1,0 +1,21 @@
+{
+ "id": "G1-T07",
+ "files": [
+  "tests/edit_ops/test_edit_parser.py",
+  "tests/edit_ops/test_edit_validator.py",
+  "tests/edit_ops/test_edit_integration.py"
+ ],
+ "module": "tests/edit_ops/",
+ "acceptance_criteria": [
+  "Unit tests pass for parser and validator",
+  "Integration test applies a real edit to a temp file and asserts disk==approved",
+  "Mutation sensitivity >=90% on ambiguous-anchor cases"
+ ],
+ "dependencies": [
+  "G1-T03",
+  "G1-T04"
+ ],
+ "category": "api",
+ "title": "edit-op unit + integration tests",
+ "description": "Three test files: parser (fence + XML fallback + malformed skip), validator (stages 0-5 + multi-match count + path traversal), integration (apply a real edit to a temp file, assert disk==approved via commit-gate read-back). Mutation sensitivity >=90% on ambiguous-anchor cases (multi-match, empty old_string, path traversal, near-miss whitespace)."
+}

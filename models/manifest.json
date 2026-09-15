@@ -1,0 +1,88 @@
+{
+  "configs": [
+    {
+      "id": "3090-qwen36-35b",
+      "gpu": "3090",
+      "model_name": "Qwen3.6-35B-A3B IQ4_XS",
+      "model_path": "/data/models/Qwen3.6-35B-A3B-UD-IQ4_XS.gguf",
+      "draft_model": "/home/<user>/models/Qwen3.6-35B-A3B-DFlash-Q4_K_M.gguf",
+      "port": 8080,
+      "context_size": 128000,
+      "thinking_enabled": true,
+      "kvarn_level": "kvarn5",
+      "speculative_type": "draft-dflash",
+      "expected_vram_mb": 18800,
+      "notes": "Fastest MoE, 128K ctx with KVarN"
+    },
+    {
+      "id": "3090-muse-glimmer",
+      "gpu": "3090",
+      "model_name": "Muse-Glimmer-30B Q3_K_XL",
+      "model_path": "/data/models/Muse-Glimmer-30B-UD-Q3_K_XL.gguf",
+      "draft_model": "/home/<user>/models/Muse-Glimmer-30B-DFlash2-Q8_0.gguf",
+      "port": 8080,
+      "context_size": 32000,
+      "thinking_enabled": false,
+      "kvarn_level": null,
+      "speculative_type": "draft-dflash2",
+      "expected_vram_mb": 15900,
+      "notes": "Agentic by design, Apache 2.0"
+    },
+    {
+      "id": "3090-laguna-xs",
+      "gpu": "3090",
+      "model_name": "Laguna-XS-2.1 APEX-i-quality",
+      "model_path": "/data/models/Laguna-XS-2.1-APEX-i-quality.gguf",
+      "draft_model": null,
+      "port": 8080,
+      "context_size": 8000,
+      "thinking_enabled": false,
+      "kvarn_level": null,
+      "speculative_type": "none",
+      "expected_vram_mb": 19100,
+      "notes": "Purpose-built coder, no KVarN, no DFlash (SIGSEGV)"
+    },
+    {
+      "id": "3090-qwen35-9b",
+      "gpu": "3090",
+      "model_name": "Qwen3.5-9B-MTP Q4_K_M",
+      "model_path": "/home/<user>/models/Qwen3.5-9B-MTP-Q4_K_M.gguf",
+      "draft_model": "/home/<user>/models/Qwen3.5-9B-DFlash.gguf",
+      "port": 8080,
+      "context_size": 140000,
+      "thinking_enabled": true,
+      "kvarn_level": "kvarn5",
+      "speculative_type": "draft-dflash",
+      "expected_vram_mb": 8000,
+      "notes": "Baseline, massive headroom, 140K ctx"
+    },
+    {
+      "id": "3070-qwen35-9b",
+      "gpu": "3070",
+      "model_name": "Qwen3.5-9B-MTP Q4_K_M",
+      "model_path": "/home/<user>/models/Qwen3.5-9B-MTP-Q4_K_M.gguf",
+      "draft_model": "/home/<user>/models/Qwen3.5-9B-DFlash.gguf",
+      "port": 8082,
+      "context_size": 8000,
+      "thinking_enabled": true,
+      "kvarn_level": "kvarn2",
+      "speculative_type": "draft-mtp",
+      "expected_vram_mb": 6900,
+      "notes": "Budget coder, 8GB VRAM ceiling"
+    },
+    {
+      "id": "3070-qwen35-4b",
+      "gpu": "3070",
+      "model_name": "Qwen3.5-4B Q5_K_M",
+      "model_path": "/data/models/Qwen3.5-4B-Q5_K_M.gguf",
+      "draft_model": null,
+      "port": 8082,
+      "context_size": 32000,
+      "thinking_enabled": true,
+      "kvarn_level": "kvarn2",
+      "speculative_type": "none",
+      "expected_vram_mb": 4000,
+      "notes": "Ultra-budget, massive headroom"
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "name": "cyclic_claims",
+  "description": "Source->source citation ring: src-1 cites src-2, src-2 cites src-1 (GRILL-S4 delta 3).",
+  "question": "what is the best approach for caching",
+  "expected_pass": false,
+  "expected_failing_check": "sources",
+  "verdict_md": "## Verdict\n\nPosition: supported\nConfidence: 0.8\nThe best approach for caching is a three-tier expert cache for latency.\n\n## Sources\n\n- [src-1] title: Source A cites: [src-2]\n- [src-2] title: Source B cites: [src-1]\n\n## Claims\n\n- [claim-1] three-tier caching reduces latency [src-1]\n- [claim-2] expert cache improves throughput [src-2]\n\n## Contradictions\n\n\n## Citations\n\n[claim:1, src:1, \"three tier caching reduces latency\", 0.9]\n[claim:2, src:2, \"expert cache improves throughput\", 0.8]\n"
+}

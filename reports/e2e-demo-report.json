@@ -1,0 +1,217 @@
+{
+  "prd": "test-prd.md",
+  "project": "/home/<user>/projects/ace-demo",
+  "host": "<LAN_IP>",
+  "dry_run": true,
+  "git_branch": null,
+  "pr_url": null,
+  "tasks": [
+    {
+      "task_id": "T01",
+      "title": "a `/health` endpoint that returns HTTP 200",
+      "complexity": "medium",
+      "status": "dry_run",
+      "attempts": 1,
+      "files_generated": 0,
+      "quality": null,
+      "test_result": null,
+      "git_result": null,
+      "error": null,
+      "plan": {
+        "prompt": "## System Instructions\n\nYou are an expert Python developer. You write clean, well-documented, production-ready code.\nOutput your response in the following format:\n\n<file path=\"src/module.py\">\n```python\n# actual code here\n```\n</file>\n\nRules:\n- Include type hints\n- Include docstrings\n- Handle errors gracefully\n- Follow PEP 8\n- No placeholder code \u2014 implement everything fully\n\n\n## Project Context\n\n## Task\n\n**Title:** a `/health` endpoint that returns HTTP 200\n\n**Description:** As DevOps engineer, i...",
+        "project_path": "/home/<user>/projects/ace-demo",
+        "run_tests": false,
+        "max_tokens": 8192,
+        "temperature": 0.3,
+        "port": 8080
+      }
+    },
+    {
+      "task_id": "T02",
+      "title": "the `/health` endpoint to return a JSON payload with a `status` field set to `\"ok\"` and a `timestamp` field",
+      "complexity": "medium",
+      "status": "dry_run",
+      "attempts": 1,
+      "files_generated": 0,
+      "quality": null,
+      "test_result": null,
+      "git_result": null,
+      "error": null,
+      "plan": {
+        "prompt": "## System Instructions\n\nYou are an expert Python developer. You write clean, well-documented, production-ready code.\nOutput your response in the following format:\n\n<file path=\"src/module.py\">\n```python\n# actual code here\n```\n</file>\n\nRules:\n- Include type hints\n- Include docstrings\n- Handle errors gracefully\n- Follow PEP 8\n- No placeholder code \u2014 implement everything fully\n\n\n## Project Context\n\n## Task\n\n**Title:** the `/health` endpoint to return a JSON payload with a `status` field set to `\"ok\"...",
+        "project_path": "/home/<user>/projects/ace-demo",
+        "run_tests": false,
+        "max_tokens": 8192,
+        "temperature": 0.3,
+        "port": 8080
+      }
+    },
+    {
+      "task_id": "T03",
+      "title": "a `/` root endpoint that returns a JSON greeting with the service name and version",
+      "complexity": "medium",
+      "status": "dry_run",
+      "attempts": 1,
+      "files_generated": 0,
+      "quality": null,
+      "test_result": null,
+      "git_result": null,
+      "error": null,
+      "plan": {
+        "prompt": "## System Instructions\n\nYou are an expert Python developer. You write clean, well-documented, production-ready code.\nOutput your response in the following format:\n\n<file path=\"src/module.py\">\n```python\n# actual code here\n```\n</file>\n\nRules:\n- Include type hints\n- Include docstrings\n- Handle errors gracefully\n- Follow PEP 8\n- No placeholder code \u2014 implement everything fully\n\n\n## Project Context\n\n## Task\n\n**Title:** a `/` root endpoint that returns a JSON greeting with the service name and version...",
+        "project_path": "/home/<user>/projects/ace-demo",
+        "run_tests": false,
+        "max_tokens": 8192,
+        "temperature": 0.3,
+        "port": 8080
+      }
+    },
+    {
+      "task_id": "T04",
+      "title": "Use FastAPI as the web framework",
+      "complexity": "medium",
+      "status": "dry_run",
+      "attempts": 1,
+      "files_generated": 0,
+      "quality": null,
+      "test_result": null,
+      "git_result": null,
+      "error": null,
+      "plan": {
+        "prompt": "## System Instructions\n\nYou are an expert Python developer. You write clean, well-documented, production-ready code.\nOutput your response in the following format:\n\n<file path=\"src/module.py\">\n```python\n# actual code here\n```\n</file>\n\nRules:\n- Include type hints\n- Include docstrings\n- Handle errors gracefully\n- Follow PEP 8\n- No placeholder code \u2014 implement everything fully\n\n\n## Project Context\n\n## Task\n\n**Title:** Use FastAPI as the web framework\n\n**Description:** Use FastAPI as the web framewor...",
+        "project_path": "/home/<user>/projects/ace-demo",
+        "run_tests": false,
+        "max_tokens": 8192,
+        "temperature": 0.3,
+        "port": 8080
+      }
+    },
+    {
+      "task_id": "T05",
+      "title": "Use uvicorn as the ASGI server",
+      "complexity": "medium",
+      "status": "dry_run",
+      "attempts": 1,
+      "files_generated": 0,
+      "quality": null,
+      "test_result": null,
+      "git_result": null,
+      "error": null,
+      "plan": {
+        "prompt": "## System Instructions\n\nYou are an expert Python developer. You write clean, well-documented, production-ready code.\nOutput your response in the following format:\n\n<file path=\"src/module.py\">\n```python\n# actual code here\n```\n</file>\n\nRules:\n- Include type hints\n- Include docstrings\n- Handle errors gracefully\n- Follow PEP 8\n- No placeholder code \u2014 implement everything fully\n\n\n## Project Context\n\n## Task\n\n**Title:** Use uvicorn as the ASGI server\n\n**Description:** Use uvicorn as the ASGI server\n\n*...",
+        "project_path": "/home/<user>/projects/ace-demo",
+        "run_tests": false,
+        "max_tokens": 8192,
+        "temperature": 0.3,
+        "port": 8080
+      }
+    },
+    {
+      "task_id": "T06",
+      "title": "The `/health` endpoint should respond in under 50ms",
+      "complexity": "medium",
+      "status": "dry_run",
+      "attempts": 1,
+      "files_generated": 0,
+      "quality": null,
+      "test_result": null,
+      "git_result": null,
+      "error": null,
+      "plan": {
+        "prompt": "## System Instructions\n\nYou are an expert Python developer. You write clean, well-documented, production-ready code.\nOutput your response in the following format:\n\n<file path=\"src/module.py\">\n```python\n# actual code here\n```\n</file>\n\nRules:\n- Include type hints\n- Include docstrings\n- Handle errors gracefully\n- Follow PEP 8\n- No placeholder code \u2014 implement everything fully\n\n\n## Project Context\n\n## Task\n\n**Title:** The `/health` endpoint should respond in under 50ms\n\n**Description:** The `/health...",
+        "project_path": "/home/<user>/projects/ace-demo",
+        "run_tests": false,
+        "max_tokens": 8192,
+        "temperature": 0.3,
+        "port": 8080
+      }
+    },
+    {
+      "task_id": "T07",
+      "title": "The `/` endpoint should return `{\"service\": \"ace-demo\", \"ver",
+      "complexity": "medium",
+      "status": "dry_run",
+      "attempts": 1,
+      "files_generated": 0,
+      "quality": null,
+      "test_result": null,
+      "git_result": null,
+      "error": null,
+      "plan": {
+        "prompt": "## System Instructions\n\nYou are an expert Python developer. You write clean, well-documented, production-ready code.\nOutput your response in the following format:\n\n<file path=\"src/module.py\">\n```python\n# actual code here\n```\n</file>\n\nRules:\n- Include type hints\n- Include docstrings\n- Handle errors gracefully\n- Follow PEP 8\n- No placeholder code \u2014 implement everything fully\n\n\n## Project Context\n\n## Task\n\n**Title:** The `/` endpoint should return `{\"service\": \"ace-demo\", \"ver\n\n**Description:** The...",
+        "project_path": "/home/<user>/projects/ace-demo",
+        "run_tests": false,
+        "max_tokens": 8192,
+        "temperature": 0.3,
+        "port": 8080
+      }
+    },
+    {
+      "task_id": "T08",
+      "title": "Include a `requirements.txt` with `fastapi` and `uvicorn`",
+      "complexity": "medium",
+      "status": "dry_run",
+      "attempts": 1,
+      "files_generated": 0,
+      "quality": null,
+      "test_result": null,
+      "git_result": null,
+      "error": null,
+      "plan": {
+        "prompt": "## System Instructions\n\nYou are an expert Python developer. You write clean, well-documented, production-ready code.\nOutput your response in the following format:\n\n<file path=\"src/module.py\">\n```python\n# actual code here\n```\n</file>\n\nRules:\n- Include type hints\n- Include docstrings\n- Handle errors gracefully\n- Follow PEP 8\n- No placeholder code \u2014 implement everything fully\n\n\n## Project Context\n\n## Task\n\n**Title:** Include a `requirements.txt` with `fastapi` and `uvicorn`\n\n**Description:** Includ...",
+        "project_path": "/home/<user>/projects/ace-demo",
+        "run_tests": false,
+        "max_tokens": 8192,
+        "temperature": 0.3,
+        "port": 8080
+      }
+    },
+    {
+      "task_id": "T09",
+      "title": "Include a `test_app.py` with pytest tests for both endpoints",
+      "complexity": "medium",
+      "status": "dry_run",
+      "attempts": 1,
+      "files_generated": 0,
+      "quality": null,
+      "test_result": null,
+      "git_result": null,
+      "error": null,
+      "plan": {
+        "prompt": "## System Instructions\n\nYou are an expert Python developer. You write clean, well-documented, production-ready code.\nOutput your response in the following format:\n\n<file path=\"src/module.py\">\n```python\n# actual code here\n```\n</file>\n\nRules:\n- Include type hints\n- Include docstrings\n- Handle errors gracefully\n- Follow PEP 8\n- No placeholder code \u2014 implement everything fully\n\n\n## Project Context\n\n## Task\n\n**Title:** Include a `test_app.py` with pytest tests for both endpoints\n\n**Description:** Inc...",
+        "project_path": "/home/<user>/projects/ace-demo",
+        "run_tests": false,
+        "max_tokens": 8192,
+        "temperature": 0.3,
+        "port": 8080
+      }
+    },
+    {
+      "task_id": "T10",
+      "title": "Include a `Dockerfile` for containerized deployment",
+      "complexity": "medium",
+      "status": "dry_run",
+      "attempts": 1,
+      "files_generated": 0,
+      "quality": null,
+      "test_result": null,
+      "git_result": null,
+      "error": null,
+      "plan": {
+        "prompt": "## System Instructions\n\nYou are an expert Python developer. You write clean, well-documented, production-ready code.\nOutput your response in the following format:\n\n<file path=\"src/module.py\">\n```python\n# actual code here\n```\n</file>\n\nRules:\n- Include type hints\n- Include docstrings\n- Handle errors gracefully\n- Follow PEP 8\n- No placeholder code \u2014 implement everything fully\n\n\n## Project Context\n\n## Task\n\n**Title:** Include a `Dockerfile` for containerized deployment\n\n**Description:** Include a `D...",
+        "project_path": "/home/<user>/projects/ace-demo",
+        "run_tests": false,
+        "max_tokens": 8192,
+        "temperature": 0.3,
+        "port": 8080
+      }
+    }
+  ],
+  "summary": {
+    "total": 10,
+    "passed": 10,
+    "failed": 0,
+    "elapsed_seconds": 0.0
+  },
+  "generated_at": "2026-09-03T11:38:49.044822+00:00"
+}

@@ -1,0 +1,85 @@
+# Project Registry for Remote Work on Triton
+# Tells the work engine which projects exist, where they live, and how to work with them.
+
+projects:
+  - name: coder-harness
+    description: "Coder Harness Benchmark Platform"
+    gitea_repo: "<user>/coder-harness"
+    local_path: "/home/<user>/projects/ace-engine"
+    remote_path: "/home/<user>/projects/coder-harness"
+    type: "python"
+    language: "python"
+    entry_points:
+      - "orchestrate.py"
+      - "remote_control.py"
+      - "sandbox_manager.py"
+      - "telemetry_dashboard.py"
+    test_command: "python3 -c 'import orchestrate; print(\"ok\")'"
+    benchmark_configs:
+      - "3090-qwen36-35b"
+      - "3090-qwen35-9b"
+    notes: "Main benchmark platform. All configs tested."
+
+  - name: pulsar-harness
+    description: "Pulsar CUDA Inference Engine"
+    gitea_repo: "<user>/pulsar-harness"
+    local_path: "/home/<user>/projects/pulsar"
+    remote_path: "/home/<user>/projects/pulsar"
+    type: "rust"
+    language: "rust"
+    entry_points:
+      - "crates/serve/src/main.rs"
+      - "crates/attention/src/lib.rs"
+    test_command: "cargo test --release"
+    build_command: "cargo build --release"
+    benchmark_configs:
+      - "3090-qwen36-35b"
+    notes: "CUDA kernels. Needs nvcc for building. Benchmarks measure kernel throughput."
+
+  - name: dsh-workspace
+    description: "DSH Campaign Results Workspace"
+    gitea_repo: "<user>/dsh-workspace"
+    local_path: "/home/<user>/projects/dsh-hub"
+    remote_path: "/home/<user>/projects/dsh-hub"
+    type: "mixed"
+    language: "typescript"
+    entry_points:
+      - "coder-harness/orchestrate.py"
+    test_command: "echo 'workspace ready'"
+    benchmark_configs:
+      - "3090-qwen36-35b"
+      - "3090-muse-glimmer"
+    notes: "Campaign results and reports workspace."
+
+  - name: deepseek-harness
+    description: "DeepSeek Harness Plugin System"
+    gitea_repo: null  # Not yet on Gitea
+    local_path: "/home/<user>/projects/deepseek-harness"
+    remote_path: "/home/<user>/projects/deepseek-harness"
+    type: "typescript"
+    language: "typescript"
+    entry_points:
+      - "packages/core/src/index.ts"
+      - "packages/acp/acp/src/index.ts"
+    test_command: "pnpm run test 2>/dev/null || echo 'deps not installed'"
+    build_command: "pnpm run build 2>/dev/null || echo 'deps not installed'"
+    benchmark_configs:
+      - "3090-qwen36-35b"
+    notes: "TypeScript plugin system. May need pnpm install first."
+
+# Default settings
+defaults:
+  model_config: "3090-qwen36-35b"
+  max_tokens: 2048
+  temperature: 0.3
+  sandbox_prefix: "harness"
+  cleanup_after_hours: 24
+
+# Model config to Docker profile mapping
+config_profiles:
+  3090-qwen36-35b: "config-i"
+  3090-muse-glimmer: "config-h"
+  3090-laguna-xs: "config-g-laguna"
+  3090-glm-47: "config-g-glm"
+  3090-qwen35-9b: "config-h-qwen35"
+  3090-qwen3-coder-30b: "config-h-coder"

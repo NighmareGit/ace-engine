@@ -1,0 +1,4 @@
+REFUSED: --execute requested but sunset date 2026-09-18 is in the future.
+Days remaining: 13
+Cannot archive legacy/ until 2026-09-18.
+EXIT_CODE=2

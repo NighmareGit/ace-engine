@@ -1,0 +1,510 @@
+# Interface & Contract Blueprint: Self-Scoring & Benchmark Integration
+# Phase-2 Stub — not implemented in the current build.
+# Depends on: engine-package-v2 (engine.db schema), judge.py (judge scoring logic),
+#             schema.sql (benchmark-results.db tables), AGENTS.md Rule 6.
+
+status: "PHASE-2 STUB"
+
+# =============================================================================
+# (A) Judge Integration Contract
+# =============================================================================
+# Goal: After the engine completes a run, quality scores are judged and written
+#       ONLY to engine.db (Rule 6). The benchmark-results.db is read-only from
+#       the engine's perspective — it never writes there.
+#
+# The judge reads test results and generated diffs from engine.db, calls the
+# judge model (BeeLlama 3070, port 8082), and writes back to engine.db.
+
+judge_integration:
+  description: >
+    Automated quality scoring of engine runs. Reads task results from
+    engine.db, sends diffs + test outcomes to the judge model (Qwen3.5-9B
+    on port 8082), and writes structured scores back to engine.db only.
+    Honours Rule 6: engine data never touches benchmark-results.db.
+
+  inputs:
+    - name: "run_id"
+      type: "str"
+      description: "engine_runs.id — the completed engine run to score"
+    - name: "task_id"
+      type: "str"
+      description: "engine_task_results.task_id — the specific task to judge"
+    - name: "generated_diff"
+      type: "str"
+      description: >
+        The generated code diff or full file content produced by the engine.
+        Sourced from engine_task_results.generated_code.
+    - name: "test_results"
+      type: "dict"
+      description: >
+        Test outcome dict from engine_task_results.test_result (JSON string).
+        Contains: {passed: bool, tests_passed: int, tests_failed: int,
+        failures: list[dict], raw_output: str}. Mirrors tester.py TestResult.
+    - name: "model_config"
+      type: "str"
+      description: >
+        The model config ID used for this run (e.g. '3090-qwen36-35b').
+        For provenance — not used in scoring logic itself.
+
+  judge_model:
+    port: 8082
+    model_id: "qwen35-9b"
+    temperature: 0.1
+    max_tokens: 1024
+    dimensions:
+      - "completeness"
+      - "correctness"
+      - "quality"
+      - "intelligence"
+      - "role_fit"
+    scoring_range: "0–10 per dimension"
+
+  output:
+    description: >
+      A single quality_scores row written to engine.db. The overall score is
+      the arithmetic mean of the 5 dimensions. Justifications are stored as
+      a JSON blob for auditability.
+
+  # --- engine.db quality_scores table definition (Rule 6) ---
+  table:
+    name: "quality_scores"
+    engine_db: true
+    columns:
+      - "id INTEGER PRIMARY KEY AUTOINCREMENT"
+      - "run_id TEXT NOT NULL REFERENCES engine_runs(id)"
+      - "task_id TEXT NOT NULL"
+      - "model_config TEXT NOT NULL"
+      - "completeness INTEGER CHECK(completeness BETWEEN 0 AND 10)"
+      - "correctness INTEGER CHECK(correctness BETWEEN 0 AND 10)"
+      - "quality INTEGER CHECK(quality BETWEEN 0 AND 10)"
+      - "intelligence INTEGER CHECK(intelligence BETWEEN 0 AND 10)"
+      - "role_fit INTEGER CHECK(role_fit BETWEEN 0 AND 10)"
+      - "score REAL GENERATED ALWAYS AS ("
+      - "  (COALESCE(completeness,0) + COALESCE(correctness,0) +"
+      - "   COALESCE(quality,0) + COALESCE(intelligence,0) +"
+      - "   COALESCE(role_fit,0)) / 5.0"
+      - ") STORED"
+      - "breakdown TEXT NOT NULL DEFAULT '{}'"
+      - "  -- JSON: {dimension: {score: N, justification: str}}"
+      - "judge_model TEXT NOT NULL DEFAULT 'qwen35-9b'"
+      - "judged_at TEXT NOT NULL DEFAULT (datetime('now'))"
+      - "UNIQUE(run_id, task_id, model_config)"
+    indexes:
+      - "CREATE INDEX IF NOT EXISTS idx_quality_run ON quality_scores(run_id)"
+      - "CREATE INDEX IF NOT EXISTS idx_quality_config ON quality_scores(model_config)"
+
+  api:
+    # One function, mirrors judge.py JudgeScorer.score_run() interface
+    - name: "score_task"
+      signature: "(run_id: str, task_id: str, generated_diff: str, test_results: dict, model_config: str) -> QualityScore"
+      description: >
+        Score a single task within an engine run. Calls judge model via
+        BeeLlama, writes to engine.db quality_scores table, returns the
+        score record. Idempotent: INSERT OR REPLACE on (run_id, task_id, model_config).
+      side_effects: "Writes exactly 1 row to engine.db quality_scores."
+      idempotent: true
+
+    - name: "score_run"
+      signature: "(run_id: str) -> list[QualityScore]"
+      description: >
+        Score all tasks in a completed engine run. Iterates
+        engine_task_results WHERE run_id = given run_id and state = 'DONE'.
+        Calls score_task for each. Returns list of all scores.
+      side_effects: "Writes N rows to engine.db quality_scores (1 per task)."
+      idempotent: true
+
+    - name: "get_quality_summary"
+      signature: "(run_id: str) -> QualitySummary"
+      description: >
+        Read back scored results for a run. Returns aggregated scores
+        (averages, min/max, per-task breakdown) from engine.db.
+
+  dataclasses:
+    - name: "QualityScore"
+      fields:
+        - name: "run_id"
+          type: "str"
+        - name: "task_id"
+          type: "str"
+        - name: "model_config"
+          type: "str"
+        - name: "completeness"
+          type: "int | None"
+        - name: "correctness"
+          type: "int | None"
+        - name: "quality"
+          type: "int | None"
+        - name: "intelligence"
+          type: "int | None"
+        - name: "role_fit"
+          type: "int | None"
+        - name: "score"
+          type: "float"
+        - name: "breakdown"
+          type: "dict"
+          description: "Per-dimension {score, justification} details"
+        - name: "judge_model"
+          type: "str"
+        - name: "judged_at"
+          type: "str"
+
+    - name: "QualitySummary"
+      fields:
+        - name: "run_id"
+          type: "str"
+        - name: "task_count"
+          type: "int"
+        - name: "avg_score"
+          type: "float"
+        - name: "avg_completeness"
+          type: "float"
+        - name: "avg_correctness"
+          type: "float"
+        - name: "avg_quality"
+          type: "float"
+        - name: "avg_intelligence"
+          type: "float"
+        - name: "avg_role_fit"
+          type: "float"
+        - name: "min_score"
+          type: "float"
+        - name: "max_score"
+          type: "float"
+        - name: "tasks"
+          type: "list[QualityScore]"
+
+# =============================================================================
+# (B) Benchmark Run API Contract
+# =============================================================================
+# Goal: Invoke one complete engine run programmatically — parse PRD, generate
+#       code, validate, test, commit — and return a structured JSON report.
+#       This is the entry point used by CCBS benchmark scripts and any
+#       external orchestrator.
+#
+# The run is idempotent: calling with the same (prd_path, model_config) pair
+# reuses an existing run_id if the previous run is still in a terminal state
+# (DONE, FAILED, CANCELLED). Concurrent runs with different model_configs
+# operate on isolated engine_runs rows and isolated git branches.
+
+benchmark_run_api:
+  description: >
+    Programmatic entry point for a single engine run. Designed for CCBS
+    integration, batch benchmarking, and external orchestration. Returns
+    a full JSON report covering timing, tokens, per-task results, and
+    quality scores (post-judge).
+
+  inputs:
+    - name: "prd_path"
+      type: "str"
+      description: "Absolute path to the PRD markdown file"
+      required: true
+    - name: "model_config"
+      type: "str"
+      description: "Model config ID (e.g. '3090-qwen36-35b'). Must exist in engine.db or manifest."
+      required: true
+    - name: "max_retries"
+      type: "int"
+      default: 3
+      description: "Max retries per task (generate → validate → test loop)"
+    - name: "timeout_s"
+      type: "int"
+      default: 600
+      description: "Total wall-clock timeout for the entire run (seconds)"
+    - name: "project_path"
+      type: "str"
+      default: "/home/<user>/projects/ace-demo"
+      description: "Target project directory on Triton"
+    - name: "dry_run"
+      type: "bool"
+      default: false
+      description: "If true, parse PRD and return task plan without running"
+    - name: "skip_scoring"
+      type: "bool"
+      default: false
+      description: "If true, skip the judge scoring step after completion"
+
+  idempotent_run_ids: >
+    Engine run IDs are deterministic UUIDs derived from SHA-256(prd_path +
+    model_config + utc_date). If a run with the same ID already exists in a
+    terminal state (DONE, FAILED, CANCELLED), calling again with the same
+    inputs returns the existing report. A new run is only created if no
+    previous run exists or the previous run is in a non-terminal state
+    (which means it crashed — the new call resumes or replaces it).
+
+  concurrent_run_isolation: >
+    Concurrent runs with different model_config values are fully isolated:
+    separate engine_runs rows, separate engine_task_results rows, separate
+    git branches (feature/{run_id}), separate quality_scores rows. Runs
+    sharing the same model_config serialize at the BeeLlama transport level
+    (single request at a time per port) but the engine DB rows remain
+    isolated. No cross-run state is shared.
+
+  output:
+    description: >
+      A JSON report describing the complete run outcome. Written to
+      engine.db engine_runs.result_json and returned by the API.
+
+  # --- Output JSON report schema ---
+  report_schema:
+    type: "object"
+    properties:
+      run_id:
+        type: "str"
+        description: "Deterministic UUID — same inputs → same run_id"
+      config_id:
+        type: "str"
+        description: "Model config used (e.g. '3090-qwen36-35b')"
+      prd:
+        type: "str"
+        description: "Relative path to the PRD file"
+      status:
+        type: "str"
+        enum: ["DONE", "FAILED", "CANCELLED", "DRY_RUN"]
+      total_time_s:
+        type: "float"
+        description: "Wall-clock seconds from start to finish"
+      tokens:
+        type: "int"
+        description: "Total tokens consumed across all tasks"
+      thinking_tokens:
+        type: "int"
+        description: "Thinking/reasoning tokens (from BeeLlama timings)"
+      tps:
+        type: "float"
+        description: "Average tokens per second across all inference calls"
+      tasks_total:
+        type: "int"
+        description: "Number of tasks parsed from PRD"
+      tasks_completed:
+        type: "int"
+        description: "Number of tasks that reached DONE state"
+      tasks_failed:
+        type: "int"
+        description: "Number of tasks that reached FAILED state"
+      per_task:
+        type: "list[BenchmarkTaskResult]"
+        description: "Per-task details (see below)"
+      quality_scores:
+        type: "list[QualityScore]"
+        description: "Judge scores per task (empty if skip_scoring=true)"
+      quality_summary:
+        type: "QualitySummary | null"
+        description: "Aggregated quality metrics (null if skip_scoring=true)"
+      error_message:
+        type: "str | null"
+        description: "Top-level error if run itself failed"
+
+  # --- Per-task result embedded in the report ---
+  per_task_result:
+    type: "object"
+    properties:
+      task_id:
+        type: "str"
+        description: "Task identifier (e.g. 'T01')"
+      title:
+        type: "str"
+      state:
+        type: "str"
+        enum: ["DONE", "FAILED", "CANCELLED"]
+      attempts:
+        type: "int"
+        description: "Number of generate→validate→test cycles"
+      commit_sha:
+        type: "str | null"
+        description: "Git SHA if commit succeeded"
+      time_s:
+        type: "float"
+        description: "Per-task wall-clock seconds"
+      tokens:
+        type: "int"
+      thinking_tokens:
+        type: "int"
+      validation_passed:
+        type: "bool"
+      tests_passed:
+        type: "bool"
+      quality_score:
+        type: "QualityScore | null"
+        description: "Judge result for this task (null if skipped)"
+      error_message:
+        type: "str | null"
+
+  api:
+    # --- Core run functions ---
+    - name: "run_benchmark"
+      signature: "(prd_path: str, model_config: str, max_retries: int = 3, timeout_s: int = 600, project_path: str = '/home/<user>/projects/ace-demo', dry_run: bool = False, skip_scoring: bool = False) -> BenchmarkReport"
+      description: >
+        Execute a full engine run. Parses PRD, runs pipeline, scores,
+        returns report. Idempotent by (prd_path, model_config) pair.
+      side_effects: >
+        Writes to engine.db (engine_runs, engine_task_results, quality_scores).
+        Creates git branch + commits on Triton. Does NOT write to
+        benchmark-results.db (Rule 6).
+      idempotent: true
+      timeout_enforced: true
+
+    - name: "get_run_report"
+      signature: "(run_id: str) -> BenchmarkReport"
+      description: >
+        Retrieve the JSON report for a completed run from engine.db
+        engine_runs.result_json. Returns None if run not found.
+
+    - name: "list_runs"
+      signature: "(config_id: str = None, status: str = None) -> list[dict]"
+      description: >
+        List runs with optional filters. Returns summaries (run_id,
+        config_id, status, total_time_s, tasks_completed).
+
+    - name: "resume_run"
+      signature: "(run_id: str) -> BenchmarkReport"
+      description: >
+        Resume a crashed/incomplete run from its last checkpoint.
+        Delegates to Pipeline.resume() (engine-package-v2 contract).
+        If the run is already in a terminal state, returns the existing
+        report without re-execution.
+
+    - name: "run_matrix"
+      signature: "(configs: list[str], prds: list[str], repetitions: int = 1, **kwargs) -> list[BenchmarkReport]"
+      description: >
+        Execute N runs across a config × PRD matrix. For each
+        (config, prd) pair, calls run_benchmark() `repetitions` times.
+        Returns a list of BenchmarkReport objects, one per invocation.
+        This is the CCBS entry point (Epic 5, US3, AC5.2). All writes
+        target engine.db (Rule 6).
+      side_effects: >
+        Writes to engine.db for each (config, prd, rep) combination.
+        Does NOT write to benchmark-results.db (Rule 6).
+      idempotent: true
+
+  dataclasses:
+    - name: "BenchmarkReport"
+      fields:
+        - name: "run_id"
+          type: "str"
+        - name: "config_id"
+          type: "str"
+        - name: "prd"
+          type: "str"
+        - name: "status"
+          type: "str"
+          enum: ["DONE", "FAILED", "CANCELLED", "DRY_RUN"]
+        - name: "total_time_s"
+          type: "float"
+        - name: "tokens"
+          type: "int"
+        - name: "thinking_tokens"
+          type: "int"
+        - name: "tps"
+          type: "float"
+        - name: "tasks_total"
+          type: "int"
+        - name: "tasks_completed"
+          type: "int"
+        - name: "tasks_failed"
+          type: "int"
+        - name: "per_task"
+          type: "list[BenchmarkTaskResult]"
+        - name: "quality_scores"
+          type: "list[QualityScore]"
+        - name: "quality_summary"
+          type: "QualitySummary | None"
+        - name: "error_message"
+          type: "str | None"
+
+    - name: "BenchmarkTaskResult"
+      fields:
+        - name: "task_id"
+          type: "str"
+        - name: "title"
+          type: "str"
+        - name: "state"
+          type: "str"
+        - name: "attempts"
+          type: "int"
+        - name: "commit_sha"
+          type: "str | None"
+        - name: "time_s"
+          type: "float"
+        - name: "tokens"
+          type: "int"
+        - name: "thinking_tokens"
+          type: "int"
+        - name: "validation_passed"
+          type: "bool"
+        - name: "tests_passed"
+          type: "bool"
+        - name: "quality_score"
+          type: "QualityScore | None"
+        - name: "error_message"
+          type: "str | None"
+
+  design_patterns:
+    - pattern: "Facade"
+      application: "run_benchmark() — single entry point hiding PRD parsing, pipeline, judging, reporting"
+      justification: "External callers (CCBS, scripts, agents) need one function, not 8 modules."
+    - pattern: "Dataclass"
+      application: "BenchmarkReport, BenchmarkTaskResult, QualityScore, QualitySummary"
+      justification: "Pythonic DTOs matching engine-package-v2 convention."
+
+  anti_patterns:
+    - pattern: "Command"
+      reason: "One entry point, not a queue of invocable objects."
+    - pattern: "Proxy"
+      reason: "run_benchmark IS the proxy — no need for a separate layer."
+
+# =============================================================================
+# (C) Rule 6 Compliance Summary
+# =============================================================================
+rule_6_compliance:
+  rule: >
+    Engine data MUST live in a separate SQLite DB (engine.db), NEVER in
+    benchmark-results.db.
+  engine_db_tables:
+    - "engine_runs (from engine-package-v2 — run state, config, task list)"
+    - "engine_task_results (from engine-package-v2 — per-task state, code, tests)"
+    - "quality_scores (this contract — judge scoring output, NEW)"
+  benchmark_db_tables:
+    - "model_configs (read-only from engine — config lookup)"
+    - "tasks (read-only from engine — task definitions if needed)"
+    - "benchmark_runs (NEVER written by engine)"
+    - "judge_scores (NEVER written by engine — this is CCBS-only)"
+    - "latency_profiles (NEVER written by engine)"
+    - "gpu_fit_matrix (NEVER written by engine)"
+  boundary: >
+    The engine reads from benchmark-results.db for config lookup only.
+    All write operations target engine.db exclusively. The CCBS benchmark
+    layer reads from engine.db for comparison reports but never writes to it.
+    The two DBs share no foreign keys and no write contention.
+
+# =============================================================================
+# (D) Integration Points with Existing Modules
+# =============================================================================
+integration_points:
+  - module: "engine/state.py"
+    role: "Owns engine.db DDL. quality_scores DDL added here in Phase 2."
+    functions_called: ["init_db (add CREATE TABLE quality_scores)"]
+  - module: "engine/tester.py"
+    role: "Provides TestResult dataclass consumed by judge integration"
+    functions_called: ["run_tests → TestResult"]
+  - module: "engine/engine.py"
+    role: "Engine.run() triggers score_run() post-completion when skip_scoring=False"
+    functions_called: ["run_benchmark → Engine.run() → score_run()"]
+  - module: "engine/pipeline.py"
+    role: "Pipeline state machine — judge runs as post-DONE side effect, not a pipeline state"
+    note: "Judging is NOT a new pipeline state. It is a post-completion hook."
+  - module: "judge.py"
+    role: "Existing CCBS judge. This contract reuses its scoring logic and rubric but writes to engine.db"
+    difference: "judge.py writes to benchmark-results.db; this contract writes to engine.db"
+
+# =============================================================================
+# Summary
+# =============================================================================
+summary:
+  tables_defined: 1 (quality_scores — in engine.db)
+  tables_referenced: 7 (2 engine.db from engine-package-v2, 5 benchmark-results.db read-only)
+  api_functions: 8 (3 judge integration + 5 benchmark run — run_benchmark, get_run_report, list_runs, resume_run, run_matrix)
+  dataclasses: 6 (QualityScore, QualitySummary, BenchmarkReport, BenchmarkTaskResult + 2 from engine-package-v2)
+  patterns: 2 (Facade, Dataclass)
+  phase: "PHASE-2 STUB"
+  status: "DESIGN ONLY — not implemented"
+  rule_6_honored: true

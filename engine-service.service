@@ -1,0 +1,31 @@
+[Unit]
+Description=Coder Harness Engine Service (FastAPI)
+After=network.target docker.service
+Wants=docker.service
+
+[Service]
+Type=simple
+WorkingDirectory=/home/<user>/projects/coder-harness
+ExecStart=/usr/bin/python3 engine_service.py --port 3082
+Restart=always
+RestartSec=5
+StartLimitBurst=5
+StartLimitIntervalSec=60
+
+# Environment
+Environment=ENGINE_PORT=3082
+EnvironmentFile=-/etc/engine-token
+
+# Hardening
+NoNewPrivileges=yes
+ProtectSystem=strict
+ReadWritePaths=/home/<user>/projects /tmp
+ProtectHome=read-only
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=engine-service
+
+[Install]
+WantedBy=multi-user.target

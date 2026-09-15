@@ -1,0 +1,305 @@
+[
+  {
+    "id": "T01",
+    "role": "orchestrator",
+    "category": "ticket-understanding",
+    "difficulty": "easy",
+    "prompt": "You receive this ticket: 'The user reports that the login form accepts invalid email formats and doesn't show error messages.' Write a structured analysis: what are the reported symptoms, what are possible root causes, what information would you need before implementing a fix?",
+    "expected_behavior": "The model should produce a structured analysis covering: (1) reported symptoms separated into two issues (accepts invalid emails, no error messages), (2) plausible root causes for each symptom (e.g., missing regex validation, disabled frontend validation, missing error state handling), and (3) clarifying questions (e.g., what formats are accepted, which browsers, screenshots, backend vs frontend validation).",
+    "scoring_criteria": "Score 0: No structured analysis. Score 3: Identifies symptoms but not root causes. Score 5: Covers symptoms and some root causes. Score 7: Covers symptoms, root causes, and clarifying questions. Score 9+: Well-organized, considers frontend and backend, identifies specific technical causes (e.g., HTML5 email validation, custom regex, form submit handler).",
+    "automated_check": null,
+    "test_cases": [],
+    "turns": 1
+  },
+  {
+    "id": "T02",
+    "role": "orchestrator",
+    "category": "multi-step-planning",
+    "difficulty": "medium",
+    "prompt": "Implement a feature that allows users to export their data as CSV. The system uses a PostgreSQL database, a Python FastAPI backend, and a React frontend. Create a detailed implementation plan with dependencies, estimated complexity, and potential risks.",
+    "expected_behavior": "The model should produce a multi-step plan covering: backend endpoint design, database query, CSV generation, streaming for large datasets, frontend button/trigger, download handling, error states, and testing. Should identify dependencies between steps, complexity estimates, and risks (e.g., memory with large datasets, encoding issues, rate limiting).",
+    "scoring_criteria": "Score 0: No plan or irrelevant. Score 3: Vague plan missing key components. Score 5: Covers backend and frontend but misses risks or dependencies. Score 7: Complete plan with dependencies and risks. Score 9+: Includes streaming, rate limiting, encoding, error handling, and testing strategy.",
+    "automated_check": null,
+    "test_cases": [],
+    "turns": 1
+  },
+  {
+    "id": "T03",
+    "role": "orchestrator",
+    "category": "verification",
+    "difficulty": "medium",
+    "prompt": "Review this code and identify all bugs:\n```python\ndef merge_sorted(a, b):\n    result = []\n    i = j = 0\n    while i < len(a) and j < len(b):\n        if a[i] <= b[j]:\n            result.append(a[i])\n            i += 1\n        else:\n            result.append(b[j])\n            j += 1\n    return result\n```",
+    "expected_behavior": "The model should identify that when one list is exhausted, the remaining elements of the other list are not appended. After the while loop, it should extend result with a[i:] or b[j:] (whichever is non-empty). The model should explain why this is a bug and provide a fix.",
+    "scoring_criteria": "Score 0: Misses the bug entirely. Score 3: Vaguely notes it's incomplete. Score 5: Correctly identifies the missing remaining elements bug. Score 7: Identifies the bug and provides a correct fix. Score 9+: Explains why it's a bug, provides fix, notes the algorithm is correct otherwise, possibly mentions edge cases (empty lists).",
+    "automated_check": null,
+    "test_cases": [],
+    "turns": 1
+  },
+  {
+    "id": "T04",
+    "role": "orchestrator",
+    "category": "ambiguity-handling",
+    "difficulty": "medium",
+    "prompt": "The ticket says: 'Make the dashboard faster.' There's no more context. What questions would you ask the reporter? What would you investigate first? What are the most likely causes?",
+    "expected_behavior": "The model should demonstrate ambiguity handling by: (1) asking clarifying questions (which dashboard, slow how, when did it start, what does 'faster' mean quantitatively), (2) proposing investigation steps (check metrics, profile the page, inspect network), and (3) listing likely causes (large dataset, unoptimized queries, missing indexes, excessive re-renders, slow API).",
+    "scoring_criteria": "Score 0: Just tries to fix without investigating. Score 3: Lists questions but no investigation plan. Score 5: Questions and some causes but no investigation plan. Score 7: Questions, investigation plan, and causes. Score 9+: Systematic approach with specific technical suggestions, measurement strategy, and prioritized hypotheses.",
+    "automated_check": null,
+    "test_cases": [],
+    "turns": 1
+  },
+  {
+    "id": "T05",
+    "role": "orchestrator",
+    "category": "prioritization",
+    "difficulty": "hard",
+    "prompt": "Given these 5 simultaneous tickets, prioritize them and explain your reasoning:\n1. Production outage: payment processing down (50% revenue affected)\n2. Security vulnerability: XSS in user profile page (CVSS 7.5)\n3. Feature request: add dark mode to settings page\n4. Bug: intermittent test failure in CI (10% of builds)\n5. Tech debt: upgrade Python 3.9 to 3.12",
+    "expected_behavior": "The model should prioritize based on severity: (1) Production outage (immediate revenue loss), (2) Security vulnerability (CVSS 7.5 = high), (3) CI test failure (affects development velocity), (4) Tech debt upgrade (preventive), (5) Dark mode (low urgency feature). Should explain reasoning using business impact, urgency, and risk frameworks.",
+    "scoring_criteria": "Score 0: Random or wrong prioritization. Score 3: Some logic but misses critical items. Score 5: Correct general order but weak reasoning. Score 7: Correct prioritization with solid reasoning. Score 9+: Uses framework (e.g., ICE, RICE, risk matrix), considers dependencies, mentions mitigation for each.",
+    "automated_check": null,
+    "test_cases": [],
+    "turns": 1
+  },
+  {
+    "id": "T06",
+    "role": "orchestrator",
+    "category": "delegation-design",
+    "difficulty": "medium",
+    "prompt": "You're leading a team of 3 developers. Design a task breakdown for implementing a real-time chat system with WebSocket support. Assign tasks to team members based on their skills: Alice (backend/WebSocket expert), Bob (frontend/React), Charlie (DevOps/infrastructure).",
+    "expected_behavior": "The model should break down the chat system into logical components and assign based on skills: Alice (WebSocket server, message handling, connection management), Bob (chat UI, message display, user input), Charlie (deployment, monitoring, scaling). Should identify dependencies and coordination points.",
+    "scoring_criteria": "Score 0: No task breakdown or random assignments. Score 3: Some breakdown but poor skill matching. Score 5: Reasonable breakdown with mostly correct assignments. Score 7: Good breakdown, correct assignments, identifies dependencies. Score 9+: Includes parallel work streams, coordination points, testing responsibilities, and timeline.",
+    "automated_check": null,
+    "test_cases": [],
+    "turns": 1
+  },
+  {
+    "id": "T07",
+    "role": "orchestrator",
+    "category": "scope-management",
+    "difficulty": "hard",
+    "prompt": "A stakeholder wants to add 5 new features to the current sprint, which already has 3 features at 60% completion. The sprint ends in 1 week. Create a scope management plan: what to defer, what to negotiate, what to accept.",
+    "expected_behavior": "The model should analyze capacity (3 features at 60% = need to finish ~40% of 3 + all of new features), identify what's realistic, propose deferring some new features, negotiate on the most impactful ones, and accept only what can be delivered. Should demonstrate trade-off analysis and stakeholder communication strategy.",
+    "scoring_criteria": "Score 0: Just accepts everything. Score 3: Suggests some deferrals but no reasoning. Score 5: Prioritizes features with reasoning. Score 7: Clear deferrals, negotiations, accepts with justification. Score 9+: Includes capacity analysis, risk assessment for each option, communication plan, and contingency.",
+    "automated_check": null,
+    "test_cases": [],
+    "turns": 1
+  },
+  {
+    "id": "T08",
+    "role": "orchestrator",
+    "category": "risk-identification",
+    "difficulty": "medium",
+    "prompt": "We're migrating from a monolithic Django app to microservices. Identify the top 10 risks and create a risk matrix (probability × impact). For each risk, propose a mitigation strategy.",
+    "expected_behavior": "The model should identify risks such as: data consistency across services, service discovery, network latency, partial failures, team expertise gaps, migration rollback complexity, testing coverage, deployment coordination, database fragmentation, and user-facing downtime. Should create a matrix and mitigations.",
+    "scoring_criteria": "Score 0: Fewer than 5 risks or no matrix. Score 3: 5-7 risks, no matrix. Score 5: 8+ risks with basic matrix. Score 7: 10 risks with matrix and mitigations. Score 9+: Comprehensive risks, clear probability×impact scoring, specific mitigations with ownership.",
+    "automated_check": null,
+    "test_cases": [],
+    "turns": 1
+  },
+  {
+    "id": "T09",
+    "role": "orchestrator",
+    "category": "status-assessment",
+    "difficulty": "easy",
+    "prompt": "Given this project status: 3 of 8 tasks complete, 2 blocked, 1 in progress, 2 not started. Sprint ends in 5 days. Write a status report for the engineering lead.",
+    "expected_behavior": "The model should write a concise status report with: current progress (3/8 = 37.5%), blocked items requiring attention, in-progress item, remaining work, risk assessment for sprint completion, and recommendations.",
+    "scoring_criteria": "Score 0: No report or wrong data. Score 3: Lists status but no analysis. Score 5: Status with basic risk assessment. Score 7: Status, risk, and recommendations. Score 9+: Professional format, burndown projection, blocked item escalation, actionable next steps.",
+    "automated_check": null,
+    "test_cases": [],
+    "turns": 1
+  },
+  {
+    "id": "T10",
+    "role": "orchestrator",
+    "category": "rollback-planning",
+    "difficulty": "hard",
+    "prompt": "We're about to deploy a database migration that renames a column from 'user_name' to 'full_name' across 3 microservices. Create a detailed rollback plan including: pre-deployment checks, deployment steps, post-deployment verification, and rollback procedure.",
+    "expected_behavior": "The model should create a comprehensive plan covering: pre-deployment (backup, schema version check, service dependency verification), deployment (order of microservices, dual-write strategy or backward-compatible approach), post-deployment (verify all services, check data integrity), and rollback (reverse migration, revert code, data reconciliation).",
+    "scoring_criteria": "Score 0: No plan or dangerous advice. Score 3: Basic steps but missing key safety measures. Score 5: Decent plan but incomplete rollback. Score 7: Complete plan with rollback and verification. Score 9+: Includes dual-write strategy, feature flags, canary deployment, data reconciliation, and monitoring.",
+    "automated_check": null,
+    "test_cases": [],
+    "turns": 1
+  },
+  {
+    "id": "T11",
+    "role": "coder",
+    "category": "implementation",
+    "difficulty": "easy",
+    "prompt": "Write a Python function `is_palindrome(s: str) -> bool` that checks if a string is a palindrome, ignoring case and non-alphanumeric characters. Include type hints, docstring, and at least 5 test cases.",
+    "expected_behavior": "A clean Python function that: strips non-alphanumeric chars, lowercases, compares string to its reverse. Includes type hints, docstring, and 5+ test cases covering normal, edge cases (empty string, single char, mixed case, special chars).",
+    "scoring_criteria": "Score 0: Function doesn't work. Score 3: Works for simple cases. Score 5: Correct with some tests. Score 7: Correct with type hints, docstring, and tests. Score 9+: Comprehensive tests, handles edge cases well, clean code.",
+    "automated_check": "python3 -c \"\ndef is_palindrome(s):\n    filtered = ''.join(c.lower() for c in s if c.isalnum())\n    return filtered == filtered[::-1]\n\nassert is_palindrome('') == True\nassert is_palindrome('a') == True\nassert is_palindrome('A man a plan a canal Panama') == True\nassert is_palindrome('race a car') == False\nassert is_palindrome('Was it a car or a cat I saw?') == True\nassert is_palindrome('No x in Nixon') == True\nprint('All tests passed')\n\"",
+    "test_cases": [
+      {"input": "", "expected": true},
+      {"input": "a", "expected": true},
+      {"input": "A man a plan a canal Panama", "expected": true},
+      {"input": "race a car", "expected": false},
+      {"input": "Was it a car or a cat I saw?", "expected": true}
+    ],
+    "turns": 1
+  },
+  {
+    "id": "T12",
+    "role": "coder",
+    "category": "refactoring",
+    "difficulty": "medium",
+    "prompt": "Refactor this monolithic function into smaller, testable functions with proper error handling:\n```python\ndef process_order(order_data):\n    # validates, calculates, saves, sends email, logs — all in one function\n    pass\n```",
+    "expected_behavior": "The model should break the function into separate concerns: validate_order, calculate_totals, save_order, send_confirmation_email, log_order. Each should handle errors appropriately. The main function should orchestrate them with proper error handling and possibly transaction management.",
+    "scoring_criteria": "Score 0: Still monolithic. Score 3: Some separation but poor error handling. Score 5: Good separation with basic error handling. Score 7: Clean separation, typed functions, proper error propagation. Score 9+: Includes logging, retry logic, transaction boundaries, and testable interfaces.",
+    "automated_check": null,
+    "test_cases": [],
+    "turns": 1
+  },
+  {
+    "id": "T13",
+    "role": "coder",
+    "category": "debugging",
+    "difficulty": "medium",
+    "prompt": "This function sometimes returns None when it should return a list. Find and fix the bug:\n```python\ndef get_active_users(users):\n    active = []\n    for user in users:\n        if user.get('is_active'):\n            active.append(user)\n    if active:\n        return active\n    # Bug: sometimes returns None here\n```",
+    "expected_behavior": "The model should identify that when no active users exist, the function falls through without returning anything (returns None implicitly). The fix is to add `return []` at the end or change `if active:` to always return. The model should explain why this is a bug.",
+    "scoring_criteria": "Score 0: Doesn't find the bug. Score 3: Vaguely notes it might not return. Score 5: Identifies the missing return statement. Score 7: Identifies and fixes correctly. Score 9+: Explains why the original logic is flawed, suggests alternatives (always return active, or return [] explicitly).",
+    "automated_check": "python3 -c \"\ndef get_active_users(users):\n    active = []\n    for user in users:\n        if user.get('is_active'):\n            active.append(user)\n    return active\n\nresult = get_active_users([{'name': 'a', 'is_active': True}, {'name': 'b', 'is_active': False}])\nassert result == [{'name': 'a', 'is_active': True}], f'Expected list, got {result}'\n\nresult2 = get_active_users([{'name': 'b', 'is_active': False}])\nassert result2 == [], f'Expected empty list, got {result2}'\n\nresult3 = get_active_users([])\nassert result3 == [], f'Expected empty list, got {result3}'\nprint('All tests passed')\n\"",
+    "test_cases": [
+      {"input": [{"name": "a", "is_active": true}, {"name": "b", "is_active": false}], "expected": [{"name": "a", "is_active": true}]},
+      {"input": [{"name": "b", "is_active": false}], "expected": []},
+      {"input": [], "expected": []}
+    ],
+    "turns": 1
+  },
+  {
+    "id": "T14",
+    "role": "coder",
+    "category": "code-generation",
+    "difficulty": "easy",
+    "prompt": "Write a Python class `LRUCache` with `get(key)` and `put(key, value)` methods. Capacity is set at construction time. When capacity is exceeded, evict the least recently used item. Include type hints, docstring, and unit tests.",
+    "expected_behavior": "A correct LRU Cache implementation using OrderedDict or a doubly-linked list + hashmap. Should have O(1) get and put operations. Include type hints, docstring, and tests for basic operations, capacity eviction, and edge cases.",
+    "scoring_criteria": "Score 0: Doesn't work or wrong data structure. Score 3: Works but wrong time complexity. Score 5: Correct O(1) operations, basic tests. Score 7: Correct with type hints, docstring, good tests. Score 9+: Comprehensive tests, edge cases, clean implementation.",
+    "automated_check": "python3 -c \"\nfrom collections import OrderedDict\n\nclass LRUCache:\n    def __init__(self, capacity):\n        self.capacity = capacity\n        self.cache = OrderedDict()\n    def get(self, key):\n        if key not in self.cache:\n            return -1\n        self.cache.move_to_end(key)\n        return self.cache[key]\n    def put(self, key, value):\n        if key in self.cache:\n            self.cache.move_to_end(key)\n        self.cache[key] = value\n        if len(self.cache) > self.capacity:\n            self.cache.popitem(last=False)\n\ncache = LRUCache(2)\ncache.put(1, 1)\ncache.put(2, 2)\nassert cache.get(1) == 1\ncache.put(3, 3)\nassert cache.get(2) == -1\ncache.put(4, 4)\nassert cache.get(1) == -1\nassert cache.get(3) == 3\nassert cache.get(4) == 4\nprint('All tests passed')\n\"",
+    "test_cases": [
+      {"input": "LRUCache(2); put(1,1); put(2,2); get(1); put(3,3); get(2)", "expected": "1, -1"},
+      {"input": "LRUCache(1); put(1,1); get(1); put(2,2); get(1)", "expected": "1, -1"}
+    ],
+    "turns": 1
+  },
+  {
+    "id": "T15",
+    "role": "coder",
+    "category": "optimization",
+    "difficulty": "hard",
+    "prompt": "This function is too slow for 1M items. Optimize it while maintaining the same behavior:\n```python\ndef find_pairs_with_sum(nums, target):\n    result = []\n    for i in range(len(nums)):\n        for j in range(i+1, len(nums)):\n            if nums[i] + nums[j] == target:\n                result.append((nums[i], nums[j]))\n    return result\n```",
+    "expected_behavior": "The model should optimize from O(n²) to O(n) using a hash map. Should handle edge cases (duplicates, negative numbers) and maintain the same output format. Should explain the optimization.",
+    "scoring_criteria": "Score 0: Doesn't optimize or breaks behavior. Score 3: Minor optimization, still O(n²). Score 5: O(n) with hash map but loses some edge cases. Score 7: Correct O(n) with edge case handling. Score 9+: Includes explanation, handles duplicates correctly, tests.",
+    "automated_check": "python3 -c \"\ndef find_pairs_with_sum(nums, target):\n    seen = {}\n    result = []\n    for num in nums:\n        complement = target - num\n        if complement in seen:\n            for c in seen[complement]:\n                result.append((c, num))\n        if num not in seen:\n            seen[num] = []\n        seen[num].append(num)\n    return result\n\nassert find_pairs_with_sum([1, 2, 3, 4, 5], 6) == [(1, 5), (2, 4)]\nassert find_pairs_with_sum([1, 1, 2, 3], 4) == [(1, 3), (1, 3)]\nassert find_pairs_with_sum([1, 2, 3], 10) == []\nassert find_pairs_with_sum([], 5) == []\nprint('All tests passed')\n\"",
+    "test_cases": [
+      {"input": [[1, 2, 3, 4, 5], 6], "expected": [[1, 5], [2, 4]]},
+      {"input": [[1, 1, 2, 3], 4], "expected": [[1, 3], [1, 3]]},
+      {"input": [[1, 2, 3], 10], "expected": []},
+      {"input": [[], 5], "expected": []}
+    ],
+    "turns": 1
+  },
+  {
+    "id": "T16",
+    "role": "coder",
+    "category": "test-writing",
+    "difficulty": "medium",
+    "prompt": "Write comprehensive unit tests for this function. Cover edge cases, error cases, and normal cases:\n```python\ndef parse_config(text: str) -> dict:\n    config = {}\n    for line in text.strip().split('\\n'):\n        if '=' in line:\n            key, value = line.split('=', 1)\n            config[key.strip()] = value.strip()\n    return config\n```",
+    "expected_behavior": "The model should write tests covering: normal parsing, multiple key-value pairs, whitespace handling, empty input, no equals sign lines, duplicate keys, values with equals signs, leading/trailing whitespace, and empty lines.",
+    "scoring_criteria": "Score 0: No tests or wrong tests. Score 3: Basic tests only. Score 5: Covers normal and edge cases. Score 7: Comprehensive coverage including error cases. Score 9+: Parametrized tests, boundary conditions, documentation of test cases.",
+    "automated_check": null,
+    "test_cases": [],
+    "turns": 1
+  },
+  {
+    "id": "T17",
+    "role": "coder",
+    "category": "api-design",
+    "difficulty": "medium",
+    "prompt": "Design a Python REST API client class for a GitHub-like API. It should support: authentication, rate limiting, retry with exponential backoff, pagination, and typed responses. Write the class with method signatures and docstrings.",
+    "expected_behavior": "The model should design a class with: authentication headers, rate limit awareness, retry logic with exponential backoff, pagination support, and typed response objects. Should have clean API design with proper method signatures.",
+    "scoring_criteria": "Score 0: No class or trivial implementation. Score 3: Basic client, missing key features. Score 5: Has most features but poor design. Score 7: Clean design with all features. Score 9+: Context manager, async support, proper type hints, comprehensive docstrings.",
+    "automated_check": null,
+    "test_cases": [],
+    "turns": 1
+  },
+  {
+    "id": "T18",
+    "role": "coder",
+    "category": "data-structure-selection",
+    "difficulty": "hard",
+    "prompt": "Implement a `Trie` class with `insert(word)`, `search(word) -> bool`, and `starts_with(prefix) -> bool`. Choose the most efficient data structure and explain your choice. Include time complexity analysis.",
+    "expected_behavior": "A correct Trie implementation using a node-based structure. Should have O(m) operations where m is the word length. Should include explanation of choice and complexity analysis.",
+    "scoring_criteria": "Score 0: Wrong data structure or broken implementation. Score 3: Basic Trie but poor efficiency. Score 5: Correct Trie with basic operations. Score 7: Correct with complexity analysis. Score 9+: Optimized (e.g., defaultdict), handles edge cases, thorough analysis.",
+    "automated_check": "python3 -c \"\nclass TrieNode:\n    def __init__(self):\n        self.children = {}\n        self.is_end = False\n\nclass Trie:\n    def __init__(self):\n        self.root = TrieNode()\n    def insert(self, word):\n        node = self.root\n        for char in word:\n            if char not in node.children:\n                node.children[char] = TrieNode()\n            node = node.children[char]\n        node.is_end = True\n    def search(self, word):\n        node = self.root\n        for char in word:\n            if char not in node.children:\n                return False\n            node = node.children[char]\n        return node.is_end\n    def starts_with(self, prefix):\n        node = self.root\n        for char in prefix:\n            if char not in node.children:\n                return False\n            node = node.children[char]\n        return True\n\nt = Trie()\nt.insert('apple')\nassert t.search('apple') == True\nassert t.search('app') == False\nassert t.starts_with('app') == True\nt.insert('app')\nassert t.search('app') == True\nprint('All tests passed')\n\"",
+    "test_cases": [
+      {"input": "insert('apple'); search('apple')", "expected": true},
+      {"input": "insert('apple'); search('app')", "expected": false},
+      {"input": "insert('apple'); starts_with('app')", "expected": true},
+      {"input": "insert('app'); search('app')", "expected": true}
+    ],
+    "turns": 1
+  },
+  {
+    "id": "T19",
+    "role": "coder",
+    "category": "error-handling",
+    "difficulty": "medium",
+    "prompt": "Write a robust file processing function that:\n1. Reads a CSV file\n2. Validates each row (expected columns: id, name, email, age)\n3. Skips invalid rows and logs warnings\n4. Returns valid rows as list of dicts\n5. Handles: file not found, permission denied, encoding errors, malformed CSV",
+    "expected_behavior": "The model should write a function using csv.DictReader that: validates required columns, handles missing values, skips and logs invalid rows, and catches all specified exceptions. Should use proper logging.",
+    "scoring_criteria": "Score 0: No error handling. Score 3: Basic implementation, some error handling. Score 5: Handles most error cases. Score 7: Comprehensive error handling with logging. Score 9+: Typed exceptions, structured logging, context manager for file.",
+    "automated_check": null,
+    "test_cases": [],
+    "turns": 1
+  },
+  {
+    "id": "T20",
+    "role": "coder",
+    "category": "performance-tuning",
+    "difficulty": "hard",
+    "prompt": "This function processes a 10GB log file but runs out of memory. Rewrite it to handle the file in chunks:\n```python\ndef count_errors(filename):\n    with open(filename) as f:\n        lines = f.readlines()\n    return sum(1 for line in lines if 'ERROR' in line)\n```",
+    "expected_behavior": "The model should rewrite to process the file line by line (lazy iteration) instead of loading all lines into memory. Should use a generator or iterate directly over the file object.",
+    "scoring_criteria": "Score 0: Still loads all into memory. Score 3: Uses chunked reading but inefficient. Score 5: Processes line by line. Score 7: Efficient line-by-line with context manager. Score 9+: Includes progress reporting, handles encoding, validates file exists.",
+    "automated_check": "python3 -c \"\nimport tempfile\nimport os\n\ndef count_errors(filename):\n    count = 0\n    with open(filename) as f:\n        for line in f:\n            if 'ERROR' in line:\n                count += 1\n    return count\n\nwith tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.log') as f:\n    f.write('INFO: starting\\n')\n    f.write('ERROR: something broke\\n')\n    f.write('INFO: recovery\\n')\n    f.write('ERROR: another failure\\n')\n    f.write('DEBUG: details\\n')\n    name = f.name\n\nassert count_errors(name) == 2\nos.unlink(name)\nprint('All tests passed')\n\"",
+    "test_cases": [
+      {"input": "log file with 2 ERROR lines", "expected": 2},
+      {"input": "log file with 0 ERROR lines", "expected": 0},
+      {"input": "empty file", "expected": 0}
+    ],
+    "turns": 1
+  },
+  {
+    "id": "T21",
+    "role": "multi-turn",
+    "category": "iterative-refinement",
+    "difficulty": "medium",
+    "prompt": "Multi-turn task (3 turns):\nTurn 1: Write a Python function that calculates the Fibonacci sequence up to n terms.\nTurn 2: Now make it handle edge cases: negative input, zero, and very large n. Add memoization.\nTurn 3: Write a benchmark comparing the recursive vs memoized versions for n=10, 20, 30, 40, 50.",
+    "expected_behavior": "The model should iteratively build: (1) a basic Fibonacci function, (2) an enhanced version with memoization and edge case handling, (3) a benchmark that measures and compares performance. Each turn should build on the previous.",
+    "scoring_criteria": "Score 0: Doesn't work across turns. Score 3: Basic implementation, ignores turn 2 or 3. Score 5: Handles all turns but weak edge cases. Score 7: All turns well-handled. Score 9+: Clean code, comprehensive edge cases, meaningful benchmark with analysis.",
+    "automated_check": null,
+    "test_cases": [],
+    "turns": 3
+  },
+  {
+    "id": "T22",
+    "role": "multi-turn",
+    "category": "code-review-feedback-loop",
+    "difficulty": "medium",
+    "prompt": "Multi-turn task (3 turns):\nTurn 1: Review this code for issues:\n```python\nclass User:\n    def __init__(self, name, age, email):\n        self.name = name\n        self.age = age\n        self.email = email\n    def get_info(self):\n        return f'{self.name} is {self.age} years old'\n    def is_adult(self):\n        return self.age >= 18\n```\nTurn 2: Fix the issues you found. Also add type hints and a docstring.\nTurn 3: Write tests for the fixed version.",
+    "expected_behavior": "The model should identify issues in turn 1 (no validation, no equality, mutable attributes), fix them in turn 2 (add validation, type hints, docstring), and write comprehensive tests in turn 3.",
+    "scoring_criteria": "Score 0: Doesn't identify issues. Score 3: Identifies some issues but misses key ones. Score 5: Good review, reasonable fix. Score 7: Thorough review, clean fix with types. Score 9+: Identifies design issues, adds validation, comprehensive tests.",
+    "automated_check": null,
+    "test_cases": [],
+    "turns": 3
+  },
+  {
+    "id": "T23",
+    "role": "multi-turn",
+    "category": "design-evolution",
+    "difficulty": "hard",
+    "prompt": "Multi-turn task (4 turns):\nTurn 1: Design a simple key-value store with get/put/delete.\nTurn 2: Add TTL (time-to-live) support for entries.\nTurn 3: Make it thread-safe.\nTurn 4: Add persistence to disk (simple JSON file).",
+    "expected_behavior": "The model should iteratively enhance a KV store: (1) basic operations, (2) TTL with expiration check, (3) thread safety with locks, (4) JSON file persistence. Each turn should build cleanly on the previous.",
+    "scoring_criteria": "Score 0: Doesn't build incrementally. Score 3: Basic KV but ignores later turns. Score 5: Handles most turns. Score 7: All turns well-implemented. Score 9+: Clean design, proper locking, atomic persistence, error handling.",
+    "automated_check": null,
+    "test_cases": [],
+    "turns": 4
+  }
+]

@@ -1,0 +1,8 @@
+{
+  "name": "hollow",
+  "description": "Verdict section has no position or confidence — anti-mush fail (GRILL-S4 delta 1).",
+  "question": "what is the best approach for caching",
+  "expected_pass": false,
+  "expected_failing_check": "structure",
+  "verdict_md": "## Verdict\n\nThe caching approach is probably the best thing ever and everyone should use it because it is very good and works well in most cases.\n\n## Sources\n\n- [src-1] type: file uri: /x/a.txt title: Source A\n\n## Claims\n\n- [claim-1] caching is best [src-1]\n\n## Contradictions\n\n"
+}

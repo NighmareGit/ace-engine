@@ -1,0 +1,45 @@
+# coder-harness engine — lightweight Python container
+# No GPU needed; pure inference client + file operations + git
+#
+# Build:  docker build -f Dockerfile.engine -t coder-engine:latest ../..
+# Run:    docker run --rm --network host -v ~/projects:/workspace coder-engine:latest
+#
+# NOTE: This is the Python-only engine. For DSH + engine hybrid, see Dockerfile.dsh
+#       (to be created in deepseek-harness repo). The hybrid image includes Node.js 22,
+#       DSH CLI, all skills (including meta-cognitive-ralph-loop), and this Python engine.
+
+FROM python:3.12-slim
+
+# System deps: git (workflow), curl (healthchecks), openssh-client (fallback)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    curl \
+    openssh-client \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create app directory
+WORKDIR /app
+
+# Copy engine source (overlaid by volume mount in dev mode)
+COPY coder-harness/ /app/
+
+# Install optional Python deps (matplotlib for report scatter plots)
+RUN pip install --no-cache-dir matplotlib
+
+# Environment — overridden by docker-compose
+ENV TRITON_HOST=localhost
+ENV TRITON_USER=<user>
+ENV BEE_LLAMA_3090=http://localhost:8080
+ENV BEE_LLAMA_3070=http://localhost:8082
+ENV GITEA_URL=http://localhost:3000
+ENV GITEA_TOKEN=""
+ENV PYTHONUNBUFFERED=1
+ENV WORKSPACE=/workspace
+
+# Health check: verify BeeLlama is reachable (the engine's primary dependency)
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 --start-period=30s \
+    CMD curl -sf http://localhost:8080/health || exit 1
+
+# Default entrypoint
+ENTRYPOINT ["python3", "harness.py"]
+CMD ["status"]

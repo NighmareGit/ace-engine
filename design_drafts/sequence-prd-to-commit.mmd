@@ -1,0 +1,70 @@
+sequenceDiagram
+    participant Dev as Developer
+    participant CLI as cli.py
+    participant Engine as Engine
+    participant Pipeline as Pipeline
+    participant CTX as ContextBuilder
+    participant GEN as CodeGenerator
+    participant VAL as Validator
+    participant TST as TestRunner
+    participant CMT as Committer
+    participant TP as Transport
+    participant BL as BeeLlama
+    participant G as Gitea
+
+    Dev->>CLI: ace run --prd test-prd.md --project /path
+    CLI->>Engine: Engine(transport, config)
+    Engine->>Pipeline: Pipeline(engine)
+    Pipeline->>Pipeline: transition(PARSING)
+
+    Pipeline->>Engine: parse_prd(prd_path)
+    Engine-->>Pipeline: task_list
+
+    Pipeline->>Pipeline: transition(QUEUED)
+
+    loop For each task
+        Pipeline->>Pipeline: transition(CONTEXT)
+        Pipeline->>CTX: build(project_path, task)
+        CTX->>TP: run_command("find ...")
+        TP-->>CTX: file_tree
+        CTX-->>Pipeline: Context
+
+        Pipeline->>Pipeline: transition(GENERATE)
+        Pipeline->>GEN: generate(context, task)
+        GEN->>TP: curl_beellama(port, messages)
+        TP->>BL: POST /v1/chat/completions
+        BL-->>TP: response
+        TP-->>GEN: GeneratedCode
+        GEN-->>Pipeline: GeneratedCode
+
+        Pipeline->>Pipeline: transition(VALIDATE)
+        Pipeline->>VAL: validate(code, context)
+        VAL-->>Pipeline: ValidationResult (PASS)
+
+        opt validation failed, retry < 3
+            Pipeline->>Pipeline: transition(GENERATE)
+        end
+
+        Pipeline->>Pipeline: transition(TEST)
+        Pipeline->>TST: test(project_path)
+        TST->>TP: run_command("pytest ...")
+        TP-->>TST: test_output
+        TST-->>Pipeline: TestResult (PASS)
+
+        opt tests failed, fix < 2
+            Pipeline->>Pipeline: transition(GENERATE)
+        end
+
+        Pipeline->>Pipeline: transition(COMMIT)
+        Pipeline->>CMT: commit(project, task, code)
+        CMT->>TP: run_git("checkout -b ace/...")
+        TP->>G: git push
+        CMT-->>Pipeline: CommitResult
+
+        Pipeline->>Pipeline: transition(NEXT)
+    end
+
+    Pipeline->>Pipeline: transition(DONE)
+    Pipeline-->>Engine: RunResult
+    Engine-->>CLI: RunResult
+    CLI-->>Dev: JSON summary

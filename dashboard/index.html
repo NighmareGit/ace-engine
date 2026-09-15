@@ -1,0 +1,1339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>⚡ Coder Harness Live</title>
+<style>
+  /* ─── Reset & Base ────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #1a1a2e;
+    --card:      #16213e;
+    --border:    #0f3460;
+    --text:      #e0e0e0;
+    --text-dim:  #8892a0;
+    --accent:    #4fc3f7;
+    --green:     #4caf50;
+    --orange:    #ff9800;
+    --red:       #ef5350;
+    --yellow:    #fdd835;
+    --purple:    #b388ff;
+    --blue:      #2196f3;
+    --cyan:      #00e5ff;
+    --row-alt:   rgba(255,255,255,0.02);
+    --error-bg:  rgba(239,83,80,0.12);
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    overflow: hidden;
+  }
+
+  /* ─── Layout ──────────────────────────────────────────── */
+  #app {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    max-height: 100vh;
+  }
+
+  /* ─── Header ──────────────────────────────────────────── */
+  #header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 10px 20px;
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    min-height: 42px;
+  }
+  #header .title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+  }
+  #header .status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  #header .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--red);
+    transition: background 0.3s;
+  }
+  #header .dot.connected { background: var(--green); }
+  #header .clock {
+    color: var(--text-dim);
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  #header .tasks {
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--text-dim);
+    white-space: nowrap;
+  }
+  #header .tasks strong { color: var(--accent); }
+
+  /* ─── Telemetry Strip ─────────────────────────────────── */
+  #telemetry {
+    display: flex;
+    gap: 12px;
+    padding: 10px 20px;
+    flex-shrink: 0;
+  }
+
+  .metric-card {
+    flex: 1;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 10px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+  .metric-card .label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-dim);
+    white-space: nowrap;
+  }
+  .metric-card .value {
+    font-size: 20px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .metric-card .sparkline {
+    display: flex;
+    gap: 1px;
+    align-items: flex-end;
+    height: 20px;
+    margin-top: 2px;
+  }
+  .metric-card .sparkline .bar {
+    width: 3px;
+    min-height: 1px;
+    border-radius: 1px 1px 0 0;
+    transition: height 0.3s ease;
+  }
+
+  /* ─── Stream Panes ────────────────────────────────────── */
+  #streams {
+    display: flex;
+    gap: 12px;
+    padding: 0 20px;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .stream-pane {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    min-width: 0;
+  }
+
+  .stream-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .stream-header .pane-title {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+  .stream-header .controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .stream-header .event-count {
+    font-size: 10px;
+    color: var(--text-dim);
+  }
+  .btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-family: inherit;
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn:hover { border-color: var(--accent); color: var(--accent); }
+  .btn.active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+
+  .stream-body {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 6px 0;
+    scroll-behavior: auto;
+  }
+  .stream-body::-webkit-scrollbar { width: 6px; }
+  .stream-body::-webkit-scrollbar-track { background: transparent; }
+  .stream-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  .log-line {
+    padding: 2px 14px;
+    font-size: 12px;
+    white-space: pre-wrap;
+    word-break: break-all;
+    line-height: 1.6;
+    transition: background 0.15s;
+  }
+  .log-line:nth-child(even) { background: var(--row-alt); }
+  .log-line.error { background: var(--error-bg); color: var(--red); }
+
+  .log-line .ts { color: var(--text-dim); }
+  .log-line .icon { margin: 0 4px; }
+  .log-line .type { color: var(--accent); font-weight: 600; }
+  .log-line .detail { color: var(--text); }
+  .log-line .dim { color: var(--text-dim); }
+  .log-line .green { color: var(--green); }
+  .log-line .orange { color: var(--orange); }
+  .log-line .red { color: var(--red); }
+  .log-line .purple { color: var(--purple); }
+  .log-line .cyan { color: var(--cyan); }
+
+  .thinking-indicator {
+    display: inline-block;
+    animation: blink 1s step-end infinite;
+    color: var(--purple);
+  }
+  @keyframes blink {
+    50% { opacity: 0.3; }
+  }
+
+  /* ─── Command Bar ─────────────────────────────────────── */
+  #command-bar {
+    display: flex;
+    align-items: center;
+    padding: 10px 20px;
+    background: var(--card);
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+    gap: 8px;
+  }
+  #command-bar .prompt {
+    color: var(--accent);
+    font-weight: 700;
+    flex-shrink: 0;
+    font-size: 14px;
+  }
+  #command-bar input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 13px;
+    caret-color: var(--accent);
+  }
+  #command-bar input::placeholder { color: var(--text-dim); }
+
+  /* ─── Welcome Placeholder ─────────────────────────────── */
+  .stream-placeholder {
+    padding: 20px 14px;
+    color: var(--text-dim);
+    font-size: 12px;
+    text-align: center;
+    opacity: 0.6;
+  }
+
+  /* ─── Scrollbar for body ──────────────────────────────── */
+  body::-webkit-scrollbar { width: 0; }
+
+  /* ─── Annotations bar ─────────────────────────────────── */
+  .annotations-bar { padding: 0; }
+  .annotations-bar:empty { display: none; }
+  .annotation-info { background: var(--blue); color: white; padding: 6px 12px; font-size: 12px; }
+  .annotation-success { background: #2e7d32; color: white; padding: 6px 12px; font-size: 12px; }
+  .annotation-warning { background: #f57c00; color: white; padding: 6px 12px; font-size: 12px; }
+  .annotation-error { background: var(--red); color: white; padding: 6px 12px; font-size: 12px; }
+
+  /* ─── Custom panels ───────────────────────────────────── */
+  .custom-panels-container { padding: 8px 16px; display: flex; flex-wrap: wrap; gap: 8px; }
+  .custom-panels-container:empty { display: none; }
+  .custom-panel { background: var(--card); border: 1px solid var(--border); border-radius: 4px; padding: 10px; min-width: 250px; flex: 1; max-width: 400px; }
+  .panel-title { font-weight: bold; color: var(--cyan); font-size: 13px; margin-bottom: 6px; }
+  .panel-content { font-size: 12px; color: var(--text); line-height: 1.5; }
+  .panel-content code { background: rgba(255,255,255,0.1); padding: 1px 4px; border-radius: 2px; }
+
+  /* ─── Highlighted tasks ───────────────────────────────── */
+  .log-line.highlighted { background: rgba(0, 150, 255, 0.15); border-left: 3px solid var(--cyan); }
+
+  /* ─── Demo Mode Toggle ────────────────────────────────── */
+  .demo-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    background: transparent;
+    color: var(--text-dim);
+    font-family: inherit;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    user-select: none;
+  }
+  .demo-toggle:hover {
+    border-color: var(--orange);
+    color: var(--orange);
+  }
+  .demo-toggle.active {
+    background: var(--orange);
+    color: var(--bg);
+    border-color: var(--orange);
+    font-weight: 600;
+  }
+  .demo-badge {
+    display: none;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    background: var(--orange);
+    color: var(--bg);
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    animation: demoPulse 2s ease-in-out infinite;
+  }
+  .demo-badge.visible {
+    display: inline-flex;
+  }
+  @keyframes demoPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+  }
+
+  /* ─── Command status in header ────────────────────────── */
+  #command-status { font-size: 11px; color: var(--text); display: none; margin-left: 12px; opacity: 0.8; }
+
+  /* ─── Responsive ──────────────────────────────────────── */
+  @media (max-width: 1280px) {
+    #telemetry { gap: 6px; padding: 8px 10px; }
+    #streams { gap: 6px; padding: 0 10px; }
+    #header { padding: 8px 10px; }
+    #command-bar { padding: 8px 10px; }
+    .metric-card .value { font-size: 16px; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ═══ Zone 0: Header ═══ -->
+  <div id="header">
+    <span class="title">⚡ Coder Harness Live</span>
+    <span class="status">
+      <span class="dot" id="status-dot"></span>
+      <span id="status-text">● Disconnected</span>
+    </span>
+    <span class="demo-badge" id="demo-badge">⚡ DEMO</span>
+    <button class="demo-toggle" id="demo-toggle" onclick="toggleDemoMode()" title="Toggle Demo Mode — generates synthetic events for testing">🎭 Demo Mode</button>
+    <span class="clock" id="clock">🕐 --:--:--</span>
+    <span class="tasks" id="task-counter">Tasks: <strong id="tasks-done">0</strong>/<strong id="tasks-total">0</strong></span>
+    <span id="command-status"></span>
+  </div>
+
+  <!-- Agent annotations bar -->
+  <div id="annotations-bar" class="annotations-bar"></div>
+
+  <!-- ═══ Zone 1: Telemetry Strip ═══ -->
+  <div id="telemetry">
+    <!-- GPU 3090 -->
+    <div class="metric-card" id="card-gpu3090">
+      <div class="label">GPU 3090</div>
+      <div class="value" id="val-gpu3090">—</div>
+      <div class="sparkline" id="spark-gpu3090"></div>
+    </div>
+    <!-- GPU 3070 -->
+    <div class="metric-card" id="card-gpu3070">
+      <div class="label">GPU 3070</div>
+      <div class="value" id="val-gpu3070">—</div>
+      <div class="sparkline" id="spark-gpu3070"></div>
+    </div>
+    <!-- Inference -->
+    <div class="metric-card" id="card-inference">
+      <div class="label">Inference</div>
+      <div class="value" id="val-inference">—</div>
+      <div class="sparkline" id="spark-inference"></div>
+    </div>
+    <!-- Cache -->
+    <div class="metric-card" id="card-cache">
+      <div class="label">Cache</div>
+      <div class="value" id="val-cache">—</div>
+      <div class="sparkline" id="spark-cache"></div>
+    </div>
+    <!-- Queue -->
+    <div class="metric-card" id="card-queue">
+      <div class="label">Queue</div>
+      <div class="value" id="val-queue">—</div>
+      <div class="sparkline" id="spark-queue"></div>
+    </div>
+  </div>
+
+  <!-- ═══ Zone 2: Split-Pane Streams ═══ -->
+  <div id="streams">
+    <!-- Left: DSH Agent Stream -->
+    <div class="stream-pane">
+      <div class="stream-header">
+        <span class="pane-title">🤖 DSH Agent Stream</span>
+        <div class="controls">
+          <span class="event-count" id="dsh-count">0 events</span>
+          <button class="btn" id="dsh-pause-btn" onclick="togglePause('dsh')">Pause</button>
+          <button class="btn" onclick="clearPane('dsh')">Clear</button>
+        </div>
+      </div>
+      <div class="stream-body" id="dsh-stream">
+        <div class="stream-placeholder">Waiting for agent events…</div>
+      </div>
+    </div>
+
+    <!-- Right: Engine Stream -->
+    <div class="stream-pane">
+      <div class="stream-header">
+        <span class="pane-title">⚙️ Engine Stream</span>
+        <div class="controls">
+          <span class="event-count" id="engine-count">0 events</span>
+          <button class="btn" id="engine-pause-btn" onclick="togglePause('engine')">Pause</button>
+          <button class="btn" onclick="clearPane('engine')">Clear</button>
+        </div>
+      </div>
+      <div class="stream-body" id="engine-stream">
+        <div class="stream-placeholder">Waiting for engine events…</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Custom panels from agent -->
+  <div id="custom-panels" class="custom-panels-container"></div>
+
+  <!-- ═══ Zone 3: Command Bar ═══ -->
+  <div id="command-bar">
+    <span class="prompt">&gt; _</span>
+    <input
+      type="text"
+      id="cmd-input"
+      placeholder="Enter command…"
+      spellcheck="false"
+      autocomplete="off"
+    />
+  </div>
+
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  // ─── State ────────────────────────────────────────────
+  let sseConnection = null;
+  let lastEventId = 0;
+  let reconnectTimer = null;
+  let reconnectDelay = 3000;
+  const MAX_RECONNECT_DELAY = 30000;
+
+  let paused = { dsh: false, engine: false };
+  let currentConfig = { highlight_tasks: [], focus_source: 'both', custom_panels: [], annotations: [] };
+  let eventCounts = { dsh: 0, engine: 0 };
+  let firstEventCleared = { dsh: false, engine: false };
+
+  // Demo mode state
+  let demoMode = false;
+  let demoInterval = null;
+  let demoTaskCounter = 0;
+
+  // Telemetry histories (last 30 readings)
+  const MAX_SPARKLINE = 30;
+  let gpuHistory = { 3090: [], 3070: [] };
+  let inferenceHistory = [];
+  let cacheHistory = [];
+  let queueHistory = [];
+
+  // Task progress
+  let taskProgress = { total: 0, completed: 0 };
+
+  // ─── DOM refs ─────────────────────────────────────────
+  const $statusDot = document.getElementById('status-dot');
+  const $statusText = document.getElementById('status-text');
+  const $clock = document.getElementById('clock');
+  const $tasksDone = document.getElementById('tasks-done');
+  const $tasksTotal = document.getElementById('tasks-total');
+  const $dshStream = document.getElementById('dsh-stream');
+  const $engineStream = document.getElementById('engine-stream');
+  const $dshCount = document.getElementById('dsh-count');
+  const $engineCount = document.getElementById('engine-count');
+  const $dshPauseBtn = document.getElementById('dsh-pause-btn');
+  const $enginePauseBtn = document.getElementById('engine-pause-btn');
+  const $cmdInput = document.getElementById('cmd-input');
+  const $demoToggle = document.getElementById('demo-toggle');
+  const $demoBadge = document.getElementById('demo-badge');
+
+  // ─── Clock ────────────────────────────────────────────
+  function updateClock() {
+    const now = new Date();
+    const hh = String(now.getHours()).padStart(2, '0');
+    const mm = String(now.getMinutes()).padStart(2, '0');
+    const ss = String(now.getSeconds()).padStart(2, '0');
+    $clock.textContent = '🕐 ' + hh + ':' + mm + ':' + ss;
+  }
+
+  // ─── SSE Connection ───────────────────────────────────
+  function connectSSE() {
+    if (sseConnection) {
+      try { sseConnection.close(); } catch(e) {}
+    }
+    if (reconnectTimer) {
+      clearTimeout(reconnectTimer);
+      reconnectTimer = null;
+    }
+
+    setStatus(false);
+
+    const url = '/stream';
+    const headers = {};
+    if (lastEventId > 0) {
+      headers['Last-Event-ID'] = String(lastEventId);
+    }
+
+    // Use EventSource with withCredentials for same-origin auth
+    sseConnection = new EventSource(url, { withCredentials: true });
+
+    sseConnection.onopen = function() {
+      setStatus(true);
+      reconnectDelay = 3000; // Reset backoff
+      console.log('[SSE] Connected to', url);
+      // Fetch dashboard config from server
+      fetch('/api/config').then(function(r) { return r.json(); }).then(function(cfg) {
+        applyDashboardConfig(cfg);
+      }).catch(function() {});
+    };
+
+    sseConnection.onerror = function(err) {
+      console.error('[SSE] Error:', err);
+      setStatus(false);
+      sseConnection.close();
+      scheduleReconnect();
+    };
+
+    sseConnection.onmessage = function(event) {
+      handleEvent(event);
+    };
+  }
+
+  function scheduleReconnect() {
+    if (reconnectTimer) return;
+    console.log('[SSE] Reconnecting in', reconnectDelay, 'ms');
+    reconnectTimer = setTimeout(function() {
+      reconnectTimer = null;
+      connectSSE();
+    }, reconnectDelay);
+    // Exponential backoff
+    reconnectDelay = Math.min(reconnectDelay * 1.5, MAX_RECONNECT_DELAY);
+  }
+
+  function setStatus(connected) {
+    if (connected) {
+      $statusDot.classList.add('connected');
+      $statusText.textContent = '● Connected';
+      $statusText.style.color = 'var(--green)';
+    } else {
+      $statusDot.classList.remove('connected');
+      $statusText.textContent = '● Disconnected';
+      $statusText.style.color = 'var(--red)';
+    }
+  }
+
+  // ─── Event Handling ───────────────────────────────────
+  function handleEvent(event) {
+    let parsed;
+    try {
+      parsed = JSON.parse(event.data);
+    } catch(e) {
+      console.warn('[SSE] Unparseable event:', event.data);
+      return;
+    }
+
+    // Track last event ID for gap-free replay
+    if (event.lastEventId) {
+      const id = parseInt(event.lastEventId, 10);
+      if (!isNaN(id) && id > lastEventId) {
+        lastEventId = id;
+      }
+    }
+
+    routeEvent(parsed);
+  }
+
+  function routeEvent(envelope) {
+    const source = envelope.source || '';
+    const type = envelope.type || '';
+    const data = envelope.data || {};
+
+    if (source === 'dsh') {
+      addToDSHStream(envelope);
+    } else if (source === 'engine') {
+      addToEngineStream(envelope);
+      updateTelemetry(envelope);
+    } else if (source === 'system') {
+      handleSystemEvent(envelope);
+    }
+  }
+
+  // ─── Stream Rendering ─────────────────────────────────
+
+  // Icon mapping
+  function getIcon(source, type) {
+    if (source === 'dsh') {
+      if (type === 'tool.call' || type === 'tool.result') return '🔧';
+      if (type === 'assistant.chunk') return '🧠';
+      if (type === 'assistant.message') return '📝';
+      if (type === 'turn.start') return '▶️';
+      if (type === 'turn.end') return '⏹️';
+      return '🤖';
+    }
+    if (source === 'engine') {
+      if (type === 'task.start') return '⚙️';
+      if (type === 'task.complete') return '⚙️';
+      if (type === 'inference.start') return '🧠';
+      if (type === 'inference.complete') return '⚡';
+      if (type === 'quality.result') return '✅';
+      if (type === 'git.commit') return '📁';
+      if (type === 'test.result') return '🧪';
+      if (type === 'gpu.snapshot') return '🌡️';
+      return '⚙️';
+    }
+    if (source === 'system') {
+      if (type === 'command.input') return '⌨️';
+      if (type === 'command.result') return '📋';
+      if (type === 'error') return '❌';
+      return '📡';
+    }
+    return '•';
+  }
+
+  function getIconColor(source, type) {
+    if (source === 'dsh') {
+      if (type === 'assistant.chunk') return 'purple';
+      if (type === 'assistant.message') return 'cyan';
+      if (type === 'turn.start') return 'green';
+      if (type === 'turn.end') return 'orange';
+    }
+    if (source === 'engine') {
+      if (type === 'task.complete') return 'green';
+      if (type === 'inference.start') return 'purple';
+      if (type === 'inference.complete') return 'cyan';
+      if (type === 'quality.result') return 'green';
+      if (type === 'test.result') return 'green';
+      if (type === 'gpu.snapshot') return 'orange';
+    }
+    return '';
+  }
+
+  function formatTimestamp(ts) {
+    if (!ts) {
+      const now = new Date();
+      return pad2(now.getHours()) + ':' + pad2(now.getMinutes()) + ':' + pad2(now.getSeconds());
+    }
+    // If it's epoch ms
+    if (typeof ts === 'number' && ts > 1e10) {
+      const d = new Date(ts);
+      return pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ':' + pad2(d.getSeconds());
+    }
+    // If already HH:MM:SS string
+    return String(ts);
+  }
+
+  function pad2(n) {
+    return String(n).padStart(2, '0');
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function buildLogLine(envelope) {
+    const { source, type, data } = envelope;
+    const ts = formatTimestamp(data.timestamp || data.ts || envelope.timestamp);
+    const icon = getIcon(source, type);
+    const iconColor = getIconColor(source, type);
+    const isError = (type === 'error') || (data && data.error) || (source === 'system' && type === 'error');
+
+    // Build detail string
+    let detail = '';
+    if (data && data.message) {
+      detail = data.message;
+    } else if (data && data.detail) {
+      detail = typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail);
+    } else if (data && data.text) {
+      detail = data.text;
+    } else if (data && Object.keys(data).length > 1) {
+      // Show interesting fields but skip internal metadata
+      const interesting = Object.keys(data).filter(k =>
+        !['timestamp', 'ts', 'source', 'type'].includes(k)
+      ).slice(0, 3);
+      detail = interesting.map(k => k + '=' + summarize(data[k])).join(' ');
+    }
+
+    // Format type for display
+    const displayType = (type || 'event').replace(/\./g, ':');
+
+    let colorClass = '';
+    if (isError) colorClass = 'red';
+    else if (iconColor) colorClass = iconColor;
+
+    const typeSpan = colorClass
+      ? '<span class="type ' + escapeHtml(colorClass) + '">' + escapeHtml(displayType) + '</span>'
+      : '<span class="type">' + escapeHtml(displayType) + '</span>';
+
+    const iconSpan = iconColor
+      ? '<span class="icon ' + escapeHtml(iconColor) + '">' + icon + '</span>'
+      : '<span class="icon">' + icon + '</span>';
+
+    let extraClass = isError ? ' error' : '';
+
+    const taskId = (data && data.task_id) ? ' data-task-id="' + escapeHtml(String(data.task_id)) + '"' : '';
+
+    return '<div class="log-line' + extraClass + '"' + taskId + '>'
+      + '<span class="ts">' + escapeHtml(ts) + '</span>'
+      + iconSpan
+      + typeSpan
+      + (detail ? '  <span class="detail">' + escapeHtml(truncate(detail, 200)) + '</span>' : '')
+      + '</div>';
+  }
+
+  function summarize(val) {
+    if (val === null || val === undefined) return 'null';
+    if (typeof val === 'number') return String(val);
+    if (typeof val === 'boolean') return val ? 'true' : 'false';
+    if (typeof val === 'string') return truncate(val, 40);
+    if (Array.isArray(val)) return '[' + val.length + ']';
+    if (typeof val === 'object') return '{' + Object.keys(val).length + '}';
+    return String(val);
+  }
+
+  function truncate(str, max) {
+    if (!str) return '';
+    str = String(str);
+    return str.length > max ? str.substring(0, max) + '…' : str;
+  }
+
+  function appendToPane(pane, envelope) {
+    const streamEl = pane === 'dsh' ? $dshStream : $engineStream;
+    const countEl = pane === 'dsh' ? $dshCount : $engineCount;
+
+    // Remove placeholder on first event
+    if (!firstEventCleared[pane]) {
+      firstEventCleared[pane] = true;
+      streamEl.innerHTML = '';
+    }
+
+    const html = buildLogLine(envelope);
+    streamEl.insertAdjacentHTML('beforeend', html);
+
+    // Limit lines to 500 to prevent memory bloat
+    while (streamEl.children.length > 500) {
+      streamEl.removeChild(streamEl.firstChild);
+    }
+
+    // Update count
+    eventCounts[pane]++;
+    countEl.textContent = eventCounts[pane] + ' events';
+
+    // Auto-scroll
+    if (!paused[pane]) {
+      streamEl.scrollTop = streamEl.scrollHeight;
+    }
+  }
+
+  function addToDSHStream(envelope) {
+    appendToPane('dsh', envelope);
+  }
+
+  function addToEngineStream(envelope) {
+    appendToPane('engine', envelope);
+  }
+
+  // ─── Telemetry ────────────────────────────────────────
+  function updateTelemetry(envelope) {
+    const { type, data } = envelope;
+
+    if (type === 'gpu.snapshot' && data) {
+      // GPU 3090
+      if (data.gpu_3090 !== undefined || data.gpu3090 !== undefined) {
+        const gpu = data.gpu_3090 || data.gpu3090 || {};
+        const temp = gpu.temp || gpu.temperature || gpu.temp_c || null;
+        if (temp !== null) {
+          pushHistory(gpuHistory[3090], temp);
+          updateGPUCard('gpu3090', temp, gpuHistory[3090]);
+        }
+      }
+      // GPU 3070
+      if (data.gpu_3070 !== undefined || data.gpu3070 !== undefined) {
+        const gpu = data.gpu_3070 || data.gpu3070 || {};
+        const temp = gpu.temp || gpu.temperature || gpu.temp_c || null;
+        if (temp !== null) {
+          pushHistory(gpuHistory[3070], temp);
+          updateGPUCard('gpu3070', temp, gpuHistory[3070]);
+        }
+      }
+      // Queue
+      if (data.queue_depth !== undefined || data.queue !== undefined) {
+        const q = data.queue_depth !== undefined ? data.queue_depth : data.queue;
+        pushHistory(queueHistory, q);
+        updateSimpleCard('queue', q + ' wait', queueHistory, 'var(--green)');
+      }
+    }
+
+    if (type === 'inference.complete' && data) {
+      const tps = data.tokens_per_sec || data.tps || data.throughput || null;
+      if (tps !== null) {
+        pushHistory(inferenceHistory, tps);
+        updateSimpleCard('inference', Math.round(tps) + ' t/s', inferenceHistory, 'var(--cyan)');
+      }
+    }
+
+    if (type === 'cache.update' && data) {
+      const hit = data.hit_rate || data.hit || data.rate || null;
+      if (hit !== null) {
+        pushHistory(cacheHistory, hit);
+        const pct = typeof hit === 'number' && hit <= 1 ? Math.round(hit * 100) : Math.round(hit);
+        updateSimpleCard('cache', pct + '% hit', cacheHistory, 'var(--purple)');
+      }
+    }
+
+    // Task progress
+    if (type === 'task.start' && data) {
+      if (data.total !== undefined) taskProgress.total = data.total;
+      if (data.task_id) taskProgress.total = Math.max(taskProgress.total, 0);
+      updateTaskCounter();
+    }
+    if (type === 'task.complete' && data) {
+      taskProgress.completed++;
+      updateTaskCounter();
+    }
+  }
+
+  function pushHistory(arr, val) {
+    arr.push(val);
+    if (arr.length > MAX_SPARKLINE) arr.shift();
+  }
+
+  function updateGPUCard(id, temp, history) {
+    const $val = document.getElementById('val-' + id);
+    $val.textContent = temp + '°C';
+
+    // Color based on temperature
+    let color = 'var(--green)';
+    if (temp > 80) color = 'var(--red)';
+    else if (temp > 65) color = 'var(--orange)';
+    $val.style.color = color;
+
+    renderSparkline('spark-' + id, history, temp, 100, color);
+  }
+
+  function updateSimpleCard(id, label, history, color) {
+    const $val = document.getElementById('val-' + id);
+    $val.textContent = label;
+    $val.style.color = color;
+
+    // Determine max for normalization
+    let max = Math.max.apply(null, history);
+    if (max <= 0) max = 1;
+    renderSparkline('spark-' + id, history, history[history.length - 1] || 0, max, color);
+  }
+
+  function renderSparkline(containerId, history, current, max, color) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    let html = '';
+    for (let i = 0; i < history.length; i++) {
+      const val = history[i];
+      const pct = max > 0 ? Math.max(4, (val / max) * 100) : 4;
+      // Dim older bars
+      const opacity = 0.4 + 0.6 * (i / Math.max(1, history.length - 1));
+      html += '<div class="bar" style="height:' + pct + '%;background:' + color + ';opacity:' + opacity + '"></div>';
+    }
+    container.innerHTML = html;
+  }
+
+  function updateTaskCounter() {
+    $tasksDone.textContent = taskProgress.completed;
+    $tasksTotal.textContent = taskProgress.total || taskProgress.completed;
+  }
+
+  // ─── Pause / Clear ────────────────────────────────────
+  window.togglePause = function(pane) {
+    paused[pane] = !paused[pane];
+    const btn = pane === 'dsh' ? $dshPauseBtn : $enginePauseBtn;
+    const streamEl = pane === 'dsh' ? $dshStream : $engineStream;
+
+    if (paused[pane]) {
+      btn.textContent = 'Resume';
+      btn.classList.add('active');
+    } else {
+      btn.textContent = 'Pause';
+      btn.classList.remove('active');
+      // Scroll to bottom on resume
+      streamEl.scrollTop = streamEl.scrollHeight;
+    }
+  };
+
+  window.clearPane = function(pane) {
+    const streamEl = pane === 'dsh' ? $dshStream : $engineStream;
+    const countEl = pane === 'dsh' ? $dshCount : $engineCount;
+    streamEl.innerHTML = '<div class="stream-placeholder">Waiting for events…</div>';
+    eventCounts[pane] = 0;
+    countEl.textContent = '0 events';
+    firstEventCleared[pane] = false;
+  };
+
+  // ─── Command Bar ──────────────────────────────────────
+  $cmdInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+      const text = $cmdInput.value.trim();
+      if (!text) return;
+      submitCommand(text);
+      $cmdInput.value = '';
+    }
+  });
+
+  function submitCommand(text) {
+    // Emit as system event into the engine stream
+    const envelope = {
+      source: 'system',
+      type: 'command.input',
+      data: {
+        command: text,
+        timestamp: Date.now()
+      }
+    };
+    addToEngineStream(envelope);
+
+    // POST to engine /exec (configurable via ENGINE_SERVICE_URL)
+    var engineUrl = window.ENGINE_SERVICE_URL || '/exec';
+    fetch(engineUrl + (engineUrl.endsWith('/exec') ? '' : '/exec'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ command: text })
+    }).then(function(res) {
+      return res.json();
+    }).then(function(data) {
+      addToEngineStream({
+        source: 'system',
+        type: 'command.result',
+        data: { result: JSON.stringify(data), timestamp: Date.now() }
+      });
+    }).catch(function(err) {
+      addToEngineStream({
+        source: 'system',
+        type: 'error',
+        data: { message: 'Command failed: ' + err.message, timestamp: Date.now() }
+      });
+    });
+  }
+
+  // ─── System Event Handler (Agent-Injected) ────────────
+  function handleSystemEvent(envelope) {
+    var type = envelope.type;
+    var data = envelope.data || {};
+
+    if (type === 'system.annotation') {
+      var anns = currentConfig.annotations || [];
+      anns.push({ text: data.text || '', style: data.style || 'info', time: envelope.time || Date.now() });
+      currentConfig.annotations = anns;
+      renderAnnotations();
+      addToEngineStream(envelope);
+    } else if (type === 'system.panel') {
+      var panels = currentConfig.custom_panels || [];
+      var idx = -1;
+      for (var i = 0; i < panels.length; i++) { if (panels[i].id === data.id) { idx = i; break; } }
+      if (idx >= 0) panels[idx] = data; else panels.push(data);
+      currentConfig.custom_panels = panels;
+      renderCustomPanels();
+    } else if (type === 'system.panel_removed') {
+      var panels2 = currentConfig.custom_panels || [];
+      currentConfig.custom_panels = panels2.filter(function(p) { return p.id !== data.id; });
+      renderCustomPanels();
+    } else if (type === 'system.highlight') {
+      currentConfig.highlight_tasks = data.task_ids || [];
+      applyHighlights();
+    } else if (type === 'system.focus') {
+      currentConfig.focus_source = data.source || 'both';
+      applyFocusMode();
+    } else if (type === 'system.command') {
+      var cmdEl = document.getElementById('command-status');
+      if (cmdEl) {
+        var icon = data.status === 'done' ? '✅' : data.status === 'running' ? '⏳' : data.status === 'failed' ? '❌' : '📋';
+        cmdEl.textContent = icon + ' ' + (data.command || '') + ' (' + (data.status || '') + ')';
+        cmdEl.style.display = 'inline';
+        setTimeout(function() { cmdEl.style.display = 'none'; }, 10000);
+      }
+      addToEngineStream(envelope);
+    } else if (type === 'system.config_changed') {
+      applyDashboardConfig(data);
+    } else {
+      addToEngineStream(envelope);
+    }
+  }
+
+  // ─── Dashboard Config ──────────────────────────────────
+  function applyDashboardConfig(cfg) {
+    currentConfig = cfg || {};
+    applyFocusMode();
+    renderAnnotations();
+    renderCustomPanels();
+    applyHighlights();
+  }
+
+  function applyFocusMode() {
+    var dshPane = document.querySelector('#dsh-stream').closest('.stream-pane');
+    var engPane = document.querySelector('#engine-stream').closest('.stream-pane');
+    if (!dshPane || !engPane) return;
+    var focus = currentConfig.focus_source || 'both';
+    dshPane.style.opacity = (focus === 'both' || focus === 'dsh') ? '1' : '0.3';
+    engPane.style.opacity = (focus === 'both' || focus === 'engine') ? '1' : '0.3';
+  }
+
+  function renderAnnotations() {
+    var el = document.getElementById('annotations-bar');
+    if (!el) return;
+    var anns = currentConfig.annotations || [];
+    var html = '';
+    for (var i = 0; i < anns.length; i++) {
+      var a = anns[i];
+      html += '<div class="annotation-' + (a.style || 'info') + '">' + escapeHtml(a.text) + '</div>';
+    }
+    el.innerHTML = html;
+  }
+
+  function renderCustomPanels() {
+    var el = document.getElementById('custom-panels');
+    if (!el) return;
+    var panels = currentConfig.custom_panels || [];
+    var html = '';
+    for (var i = 0; i < panels.length; i++) {
+      var p = panels[i];
+      html += '<div class="custom-panel" data-panel-id="' + escapeHtml(p.id || '') + '">';
+      html += '<div class="panel-title">' + escapeHtml(p.title || 'Panel') + '</div>';
+      html += '<div class="panel-content">' + simpleMarkdown(p.content || '') + '</div>';
+      html += '</div>';
+    }
+    el.innerHTML = html;
+  }
+
+  function simpleMarkdown(text) {
+    var s = escapeHtml(text);
+    s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    s = s.replace(/\*(.+?)\*/g, '<em>$1</em>');
+    s = s.replace(/`(.+?)`/g, '<code>$1</code>');
+    s = s.replace(/\n/g, '<br>');
+    return s;
+  }
+
+  function applyHighlights() {
+    var pane = document.getElementById('engine-stream');
+    if (!pane) return;
+    var lines = pane.querySelectorAll('.log-line');
+    var highlighted = currentConfig.highlight_tasks || [];
+    for (var i = 0; i < lines.length; i++) {
+      var tid = lines[i].getAttribute('data-task-id');
+      if (tid && highlighted.indexOf(tid) >= 0) {
+        lines[i].classList.add('highlighted');
+      } else {
+        lines[i].classList.remove('highlighted');
+      }
+    }
+  }
+
+  // ─── Demo Mode ────────────────────────────────────────
+  // Randomized helper
+  function demoRand(min, max) { return min + Math.random() * (max - min); }
+  function demoRandInt(min, max) { return Math.floor(demoRand(min, max + 1)); }
+  function demoPick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+  // Task names for realistic events
+  const DEMO_TASK_NAMES = [
+    'Implement auth middleware', 'Refactor database layer', 'Add unit tests for API',
+    'Fix race condition in worker', 'Update dependency versions', 'Optimize query performance',
+    'Add logging to payment flow', 'Create migration script', 'Refactor error handling',
+    'Add rate limiter', 'Implement caching layer', 'Fix memory leak in parser',
+    'Add WebSocket support', 'Refactor config loader', 'Implement retry logic',
+  ];
+
+  // Model names
+  const DEMO_MODELS = [
+    'Qwen3.6-35B-A3B', 'Qwen3.5-9B-MTP', 'Muse-Glimmer-30B', 'Laguna-XS-2.1',
+  ];
+
+  // Annotation messages
+  const DEMO_ANNOTATIONS = [
+    '💡 GPU 3090 temperature nominal — all systems green',
+    '📊 Throughput: 197.3 tok/s on Qwen3.6-35B — within expected range',
+    '🔍 Quality gate passed — 8.2/10 overall score',
+    '⚡ Speculative decoding active — DFlash draft model engaged',
+    '📦 Checkpoint saved — 3/5 tasks complete',
+    '🌡️ GPU 3070 VRAM at 82% — consider context reduction',
+    '✅ All tests passing — 42/42',
+    '🔧 KVarN cache compression: 52% memory reduction',
+    '⏱️ Inference latency p95: 124ms — target <200ms met',
+    '🚀 Model swap completed in 8.3s — config-i loaded',
+  ];
+
+  // Commit messages
+  const DEMO_COMMIT_MESSAGES = [
+    'feat: implement auth middleware with JWT validation',
+    'fix: resolve race condition in worker pool',
+    'refactor: extract database connection pooling',
+    'test: add integration tests for payment flow',
+    'chore: update dependencies to latest stable',
+    'perf: optimize N+1 query in user listing',
+    'feat: add rate limiter with sliding window',
+    'fix: handle edge case in config parser',
+    'docs: update API reference for v2.1',
+    'feat: implement WebSocket reconnection logic',
+  ];
+
+  // Generate a single random demo event envelope
+  function generateDemoEvent() {
+    const pick = Math.random();
+    const now = Date.now();
+
+    if (pick < 0.12) {
+      // engine.task.start
+      demoTaskCounter++;
+      return {
+        source: 'engine',
+        type: 'task.start',
+        data: {
+          task_id: 'T' + String(demoTaskCounter).padStart(2, '0'),
+          task_name: demoPick(DEMO_TASK_NAMES),
+          total: demoRandInt(3, 8),
+          timestamp: now,
+        }
+      };
+    } else if (pick < 0.24) {
+      // engine.task.complete
+      return {
+        source: 'engine',
+        type: 'task.complete',
+        data: {
+          task_id: 'T' + String(demoRandInt(1, Math.max(demoTaskCounter, 1))).padStart(2, '0'),
+          duration: Math.round(demoRand(5.0, 45.0) * 10) / 10,
+          timestamp: now,
+        }
+      };
+    } else if (pick < 0.34) {
+      // engine.inference.start
+      return {
+        source: 'engine',
+        type: 'inference.start',
+        data: {
+          model: demoPick(DEMO_MODELS),
+          prompt_tokens: demoRandInt(200, 4000),
+          max_tokens: demoRandInt(512, 4096),
+          timestamp: now,
+        }
+      };
+    } else if (pick < 0.48) {
+      // engine.inference.complete
+      return {
+        source: 'engine',
+        type: 'inference.complete',
+        data: {
+          tokens_per_sec: Math.round(demoRand(120.0, 220.0) * 10) / 10,
+          tokens: demoRandInt(256, 4096),
+          prompt_tokens: demoRandInt(200, 4000),
+          predicted_ms: demoRandInt(80, 300),
+          timestamp: now,
+        }
+      };
+    } else if (pick < 0.58) {
+      // engine.quality.result
+      const score = Math.round(demoRand(5.5, 9.5) * 10) / 10;
+      return {
+        source: 'engine',
+        type: 'quality.result',
+        data: {
+          task_id: 'T' + String(demoRandInt(1, Math.max(demoTaskCounter, 1))).padStart(2, '0'),
+          score: score,
+          completeness: demoRandInt(5, 10),
+          correctness: demoRandInt(5, 10),
+          quality: demoRandInt(5, 10),
+          intelligence: demoRandInt(5, 10),
+          checks_passed: demoRandInt(3, 5),
+          checks_total: 5,
+          timestamp: now,
+        }
+      };
+    } else if (pick < 0.66) {
+      // engine.git.commit
+      return {
+        source: 'engine',
+        type: 'git.commit',
+        data: {
+          hash: Math.random().toString(16).substring(2, 9),
+          message: demoPick(DEMO_COMMIT_MESSAGES),
+          files_changed: demoRandInt(1, 8),
+          insertions: demoRandInt(10, 200),
+          deletions: demoRandInt(2, 80),
+          timestamp: now,
+        }
+      };
+    } else if (pick < 0.74) {
+      // engine.test.result
+      const passed = demoRandInt(38, 48);
+      return {
+        source: 'engine',
+        type: 'test.result',
+        data: {
+          passed: passed,
+          failed: demoRandInt(0, 3),
+          skipped: demoRandInt(0, 2),
+          duration: Math.round(demoRand(2.0, 18.0) * 10) / 10,
+          timestamp: now,
+        }
+      };
+    } else if (pick < 0.86) {
+      // gpu.snapshot
+      const temp3090 = demoRandInt(55, 78);
+      const temp3070 = demoRandInt(42, 62);
+      return {
+        source: 'engine',
+        type: 'gpu.snapshot',
+        data: {
+          gpu_3090: {
+            temp: temp3090,
+            vram_used_mb: demoRandInt(6000, 22000),
+            vram_total_mb: 24576,
+            utilization_pct: demoRandInt(15, 95),
+          },
+          gpu_3070: {
+            temp: temp3070,
+            vram_used_mb: demoRandInt(3000, 7500),
+            vram_total_mb: 8192,
+            utilization_pct: demoRandInt(10, 80),
+          },
+          queue_depth: demoRandInt(0, 5),
+          timestamp: now,
+        }
+      };
+    } else {
+      // system.annotation
+      return {
+        source: 'system',
+        type: 'system.annotation',
+        data: {
+          text: demoPick(DEMO_ANNOTATIONS),
+          style: demoPick(['info', 'info', 'info', 'success', 'warning']),
+          timestamp: now,
+        }
+      };
+    }
+  }
+
+  // Start demo mode: inject synthetic events at realistic intervals
+  function startDemoMode() {
+    if (demoMode) return;
+    demoMode = true;
+
+    // Update UI
+    $demoToggle.classList.add('active');
+    $demoToggle.textContent = '🎭 Demo Mode ON';
+    $demoBadge.classList.add('visible');
+
+    // Generate first event immediately
+    routeEvent(generateDemoEvent());
+
+    // Schedule subsequent events at randomized intervals (2–5 seconds)
+    demoInterval = setInterval(function() {
+      routeEvent(generateDemoEvent());
+    }, demoRandInt(2000, 5000));
+
+    console.log('[Demo] Mode enabled — generating synthetic events');
+  }
+
+  // Stop demo mode
+  function stopDemoMode() {
+    if (!demoMode) return;
+    demoMode = false;
+
+    if (demoInterval) {
+      clearInterval(demoInterval);
+      demoInterval = null;
+    }
+
+    // Update UI
+    $demoToggle.classList.remove('active');
+    $demoToggle.textContent = '🎭 Demo Mode';
+    $demoBadge.classList.remove('visible');
+
+    console.log('[Demo] Mode disabled');
+  }
+
+  // Toggle demo mode (exposed globally for onclick)
+  window.toggleDemoMode = function() {
+    if (demoMode) {
+      stopDemoMode();
+    } else {
+      startDemoMode();
+    }
+  };
+
+  // ─── Initialize ───────────────────────────────────────
+  updateClock();
+  setInterval(updateClock, 1000);
+
+  // Connect to real SSE endpoint
+  connectSSE();
+
+  // Demo mode: auto-enable with ?demo=1 URL parameter
+  if (window.location.search.indexOf('demo=1') !== -1) {
+    startDemoMode();
+  }
+
+})();
+</script>
+</body>
+</html>

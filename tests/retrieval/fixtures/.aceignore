@@ -1,0 +1,4 @@
+# Test .aceignore
+*.pyc
+__pycache__/
+ignored_dir/

@@ -1,0 +1,60 @@
+graph TB
+    subgraph "Developer Machine (nightmare)"
+        CLI["cli.py<br/>Unified CLI Entry Point"]
+    end
+
+    subgraph "Engine Package (engine/)"
+        ENG["engine.py<br/>Engine Class"]
+        PL["pipeline.py<br/>12-State Machine"]
+        CTX["context.py<br/>Context Builder"]
+        GEN["generator.py<br/>Code Generator"]
+        VAL["validator.py<br/>4-Stage Validator"]
+        TST["tester.py<br/>Test Runner"]
+        CMT["committer.py<br/>Git + Gitea"]
+        ST["state.py<br/>Run Persistence"]
+        EV["events.py<br/>Event Bridge"]
+    end
+
+    subgraph "Retained Infrastructure"
+        TP["transport.py<br/>HTTP/Local/SSH"]
+        PC["prompt_compiler.py<br/>Manifest Prompts"]
+        SC["streaming_client.py<br/>Event Emission"]
+    end
+
+    subgraph "Triton (<LAN_IP>)"
+        BL3090["BeeLlama 3090<br/>:8080"]
+        BL3070["BeeLlama 3070<br/>:8082"]
+        GIT["Gitea<br/>:3000"]
+        PROJ["Projects<br/>/home/<user>/projects/"]
+    end
+
+    subgraph "Observability"
+        SS["streaming_server.py<br/>:3081 SSE"]
+        DASH["Dashboard<br/>Browser"]
+    end
+
+    CLI -->|"ace run --prd X"| ENG
+    ENG --> PL
+    PL --> CTX
+    PL --> GEN
+    PL --> VAL
+    PL --> TST
+    PL --> CMT
+    ENG --> ST
+    ENG --> EV
+
+    CTX --> TP
+    GEN --> TP
+    GEN --> PC
+    TST --> TP
+    CMT --> TP
+    VAL -->|"AST parse"| PROJ
+
+    TP -->|"HTTP/SSH"| BL3090
+    TP -->|"HTTP/SSH"| BL3070
+    TP -->|"HTTP/SSH"| GIT
+    TP -->|"SSH"| PROJ
+
+    EV -->|"fire-and-forget"| SC
+    SC --> SS
+    SS -->|"SSE"| DASH

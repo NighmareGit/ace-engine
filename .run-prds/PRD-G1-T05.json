@@ -1,0 +1,18 @@
+{
+ "id": "G1-T05",
+ "files": [
+  "tests/edit_ops/test_fuzz_rejection.py"
+ ],
+ "module": "tests/edit_ops/test_fuzz_rejection.py",
+ "acceptance_criteria": [
+  "Fuzzy escalation is documented as rejected for v1",
+  "Validator refuses fuzzy-match paths (test asserts rejection)",
+  "Aider-style escalation referenced as the upgrade path"
+ ],
+ "dependencies": [
+  "G1-T03"
+ ],
+ "category": "api",
+ "title": "fuzz-escalation-rejected v1 \u2014 document + test the rejection boundary",
+ "description": "Document that fuzzy escalation is rejected for v1 (same format-drift class as fence mangling). Test that the validator refuses fuzzy-match paths. Reference Aider-style escalation as the documented upgrade path. No new production code."
+}

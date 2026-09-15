@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gitea.<user>/rlm-engine/schemas/rlm-ticket-v1.schema.json",
+  "title": "RLM Engine rev-2 ticket (PRE-EPIC §6.1) — SHARED CONTRACT v1",
+  "description": "Frozen agreement artifact of the joint schema pass (HANDOFF-ace-engine-schema-pass.md W1). Stored in BOTH repos: rlm-engine (emitter) and ace-engine (consumer). Change-control: any bump requires updating this file + the mapping doc in BOTH repos in the same change.",
+  "type": "object",
+  "required": ["id", "epic_id", "title", "description", "skill", "competence", "files", "tests", "dependencies", "deliverable", "contract", "complexity", "recommended_model", "confidence", "metadata"],
+  "properties": {
+    "id": {"type": "string", "pattern": "^EPIC-\\d{3}-T\\d{3}$|^(EPIC-\\d{3})?-W\\d{3}$", "description": "EPIC-XXX-TXXX; witness tickets use EPIC-XXX-W### (consumer must tolerate/dispatch)"},
+    "epic_id": {"type": "string"},
+    "title": {"type": "string", "minLength": 1},
+    "description": {"type": "string", "minLength": 1},
+    "skill": {"type": "string", "description": "Skill NAME only; path auto-resolved by the RLM engine's registry"},
+    "competence": {"enum": ["explore", "investigate", "research", "plan", "compile", "implement", "test", "attack", "review"], "description": "Closed 9-value vocabulary — may NOT be extended without contract bump"},
+    "files": {
+      "type": "array", "minItems": 1,
+      "items": {"type": "object", "required": ["path", "action"], "properties": {"path": {"type": "string"}, "action": {"enum": ["create", "modify", "delete"]}}}
+    },
+    "tests": {"type": "array", "items": {"type": "string"}, "description": "Test commands verifying completion"},
+    "dependencies": {"type": "array", "items": {"type": "string"}, "description": "Ticket IDs that must complete first"},
+    "eats": {"type": "array", "items": {"type": "string"}, "description": "Evidence/context inputs consumed (artifact paths). Optional; consumer v1 treats as metadata + context synthesis."},
+    "deliverable": {"type": "string", "minLength": 1, "description": "Exact artifact path proving completion. Evidence-based close: consumer closes ONLY when this path exists and is non-empty."},
+    "contract": {
+      "type": "object", "required": ["success_criteria"],
+      "properties": {"success_criteria": {"type": "array", "items": {"type": "string"}, "minItems": 1}}
+    },
+    "complexity": {"enum": ["low", "medium", "high", "critical"]},
+    "recommended_model": {"type": "string", "description": "DECOMPOSE proposal; ROUTE's RouteTable is authoritative (planner guess kept in metadata.route_reason)"},
+    "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+    "mission_intent": {
+      "type": ["object", "null"],
+      "properties": {"root_goal_hash": {"type": "string"}, "invariants": {"type": "array", "items": {"type": "string"}}}
+    },
+    "metadata": {
+      "type": "object", "required": ["route_reason", "skill_why", "est_tokens", "est_minutes"],
+      "properties": {
+        "route_reason": {"type": "string"},
+        "skill_why": {"type": "string"},
+        "est_tokens": {"type": "integer", "minimum": 0},
+        "est_minutes": {"type": "integer", "minimum": 0},
+        "decomposition_provenance": {"type": "string"}
+      }
+    }
+  }
+}

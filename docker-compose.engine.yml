@@ -1,0 +1,74 @@
+# docker-compose.engine.yml — Standalone engine compose (for testing)
+#
+# Usage:
+#   docker compose -f docker-compose.engine.yml up -d
+#   docker compose -f docker-compose.engine.yml logs -f
+#   docker compose -f docker-compose.engine.yml down
+#
+# Or merge into existing compose:
+#   docker compose -f tickets/deploy/docker-compose.yml -f docker-compose.engine.yml --profile engine up -d
+#
+# NOTE: This is the Python-only engine. For DSH + engine hybrid (with Node.js, skills,
+#       meta-cognitive-ralph-loop), see docker-compose.dsh.yml (to be created).
+#       The hybrid compose uses the same host networking pattern but adds DSH volumes
+#       and environment variables.
+
+services:
+  coder-engine:
+    container_name: coder-engine
+    build:
+      context: .
+      dockerfile: coder-harness/Dockerfile.engine
+    image: coder-engine:latest
+    network_mode: host
+    restart: unless-stopped
+    # NO GPU reservation — pure Python
+    volumes:
+      # Durable engine results — engine.db/judge_verdicts survive container rebuilds
+      # (paths.py honors ENGINE_DB_PATH; results must never live in the image layer)
+      - engine-data:/app/data
+      # Project code — read-write for file operations
+      - /home/<user>/projects:/workspace:rw
+      # Telemetry database
+      - /home/<user>/coder-harness-telemetry.db:/data/telemetry.db
+      # Docker socket — for sandbox lifecycle management
+      - /var/run/docker.sock:/var/run/docker.sock
+      # Git config (optional, for commits)
+      - /home/<user>/.gitconfig:/root/.gitconfig:ro
+      # SSH keys (optional fallback)
+      - /home/<user>/.ssh:/root/.ssh:ro
+      # CCBS shared configuration (read-only)
+      - /home/<user>/shared-configs:/shared-configs:ro
+      # Model directories (read-only)
+      - /home/<user>/models:/models:ro
+      - /data/models:/data/models:ro
+    environment:
+      - TRITON_HOST=localhost
+      - TRITON_USER=<user>
+      - BEE_LLAMA_3090=http://localhost:8080
+      - BEE_LLAMA_3070=http://localhost:8082
+      - GITEA_URL=http://localhost:3000
+      - GITEA_TOKEN=${GITEA_TOKEN:-}   # supply via shell env or `--env-file`; never hardcode
+      - CODER_HARNESS_DB=/data/telemetry.db
+      - ENGINE_DB_PATH=/app/data/engine.db
+      - ENGINE_DB_BACKUP=/app/data/engine.db.bak
+      # NO cloud LLM keys here (incident 2026-09-07: ~$19 DeepSeek burn via
+      # event-horizon fallback). Engine talks ONLY to localhost BeeLlama.
+      # DEEPSEEK_API_KEY and similar must never be set on this container.
+      - PYTHONUNBUFFERED=1
+      - WORKSPACE=/workspace
+      - CCBS_CONFIG_PATH=/shared-configs/ccbs-queue.json
+      - CCBS_MODEL_POOL=/shared-configs/model-pool.json
+      - MODEL_DIR=/models
+      - MODEL_DIR_EXTRA=/data/models
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    profiles:
+      - engine
+
+volumes:
+  engine-data:

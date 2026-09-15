@@ -1,0 +1,18 @@
+{
+ "id": "G1-T01",
+ "files": [
+  "engine/state.py",
+  "engine/prd.py"
+ ],
+ "module": "engine/state.py",
+ "acceptance_criteria": [
+  "init_db() adds edit_op_results table idempotently on an existing engine.db",
+  "'edit' registered in CATEGORY_TO_TYPE (engine/prd.py)",
+  "Schema is additive-only: no ALTER on existing tables",
+  "Full engine suite still passes"
+ ],
+ "dependencies": [],
+ "category": "api",
+ "title": "edit-op schema \u2014 task_type 'edit' + search/replace block contract",
+ "description": "Additive DDL + CATEGORY_TO_TYPE registration for the new 'edit' task_type. init_db() adds the edit_op_results table idempotently (id, run_id, task_id, attempt, match_count, applied, created_at). 'edit' added to CATEGORY_TO_TYPE dict (engine/prd.py:33). Additive-only: no ALTER on existing tables. No engine/models.py (does not exist \u2014 atom kind lives in CATEGORY_TO_TYPE, not an enum)."
+}

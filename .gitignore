@@ -1,0 +1,21 @@
+# Database files
+*.db
+*.db.bak
+
+# Benchmark results
+benchmark-results.db
+
+# Python cache
+__pycache__/
+
+# Engine run task files
+engine_run_*_tasks.json
+*.pyc
+*.pyo
+*.log
+.venv/
+*_session_payloads.jsonl
+*.egg-info/
+.scratch/
+deploy/
+ccbs-deployment/

@@ -1,0 +1,20 @@
+{
+ "id": "G1-T02",
+ "files": [
+  "engine/edit_ops/extract.py"
+ ],
+ "module": "engine/edit_ops/extract.py",
+ "acceptance_criteria": [
+  "Parses Aider-style SEARCH/REPLACE fences into EditOp dataclass",
+  "Falls back to <edit><old>/<new> XML tags",
+  "Malformed blocks skipped with warning, never crash",
+  "Session log row written per LLM call",
+  "New code lives in engine/edit_ops/extract.py (not inline in generator.py)"
+ ],
+ "dependencies": [
+  "G1-T01"
+ ],
+ "category": "api",
+ "title": "edit-op parser tier \u2014 Aider fence + XML fallback",
+ "description": "EditOpExtractor.extract() in engine/edit_ops/extract.py parses Aider-style SEARCH/REPLACE fences (<<<<<<< SEARCH / ======= / >>>>>>> REPLACE) into EditOp dataclass {target_file, blocks: [{path, old_string, new_string}], raw_response}. XML <edit><old>...</old><new>...</new></edit> is the secondary fallback. Malformed blocks skipped with warning (never crash). Session-log row per LLM call. New code in engine/edit_ops/extract.py, NOT inline in generator.py."
+}
